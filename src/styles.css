@@ -2040,3 +2040,7 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 .desk-note-name:focus, .desk-note-content:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
 .desk-image-full { display: block; width: 100%; max-height: 72vh; object-fit: contain; border-radius: var(--radius-inset); background: var(--surface-inset); }
 @media (max-width: 1080px) { .desk-layout { grid-template-columns: 1fr; } }
+
+/* ——— 自定义背景 ——— */
+.custom-background { position: fixed; inset: 0; z-index: var(--z-ambient); pointer-events: none; overflow: hidden; background-size: cover; background-position: center; background-repeat: no-repeat; }
+.background-control { display: flex; align-items: center; gap: 8px; }

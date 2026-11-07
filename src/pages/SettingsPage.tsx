@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Database, FolderOpen, ShieldCheck, DownloadSimple, ArrowCounterClockwise, Trash, Sun, Moon, Check, Archive, Notebook, Stack, SquaresFour } from "@phosphor-icons/react";
+import { Database, FolderOpen, ShieldCheck, DownloadSimple, ArrowCounterClockwise, Trash, Sun, Moon, Check, Archive, Notebook, Stack, SquaresFour, ImageSquare } from "@phosphor-icons/react";
 import { api } from "../api";
 import { useWorkspace } from "../WorkspaceContext";
 import type { CollectionName } from "../types";
@@ -20,6 +20,7 @@ export function SettingsPage() {
   const [restoreId, setRestoreId] = useState<string | null>(null);
   const [permanent, setPermanent] = useState<{ collection: CollectionName; id: string; title: string } | null>(null);
   const [dashboardModules, setDashboardModules] = useState<string[] | null>(null);
+  const backgroundInput = useRef<HTMLInputElement>(null);
   const saveSetting = (key: string, value: any) => run(() => api.saveSettings({ [key]: value }));
   useEffect(() => { setDashboardModules(null); }, [data.settings.dashboardModules]);
   const createBackup = async () => { setBusy("backup"); try { await run(() => api.createBackup("手动备份", false)); } finally { setBusy(""); } };
@@ -36,6 +37,32 @@ export function SettingsPage() {
     setDashboardModules(next);
     void saveSetting("dashboardModules", next).catch(() => setDashboardModules(null));
   };
+  const handleBackgroundUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error("无法读取这张图片"));
+        element.src = url;
+      });
+      const maxEdge = 1920;
+      const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth || 1, image.naturalHeight || 1));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round((image.naturalWidth || 1) * scale));
+      canvas.height = Math.max(1, Math.round((image.naturalHeight || 1) * scale));
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      await run(() => api.saveSettings({ background_image: canvas.toDataURL("image/jpeg", 0.85) }));
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+  const clearBackground = () => void run(() => api.saveSettings({ background_image: "" }));
   return (
     <div>
       <PageHeader icon={<ModuleArtwork module="settings" />} eyebrow="本机数据控制" title="数据与设置" description="查看数据文件、创建备份、恢复历史版本并调整使用偏好。" />
@@ -52,6 +79,7 @@ export function SettingsPage() {
         <div className="preferences">
           <div><div><strong>界面风格</strong><small>功能和数据保持一致，只改变视觉系统</small></div><div className="appearance-toggle style-toggle" role="group" aria-label="界面风格"><button className={appearance === "liquid" ? "active" : ""} aria-label="Liquid Glass" aria-pressed={appearance === "liquid"} onClick={() => void saveSetting("appearance", "liquid")}><span><Stack size={17} /><strong>Liquid Glass</strong></span><small>环境色、透明材质与柔和层次</small></button><button className={appearance === "notebook" ? "active" : ""} aria-label="Notion 笔记" aria-pressed={appearance === "notebook"} onClick={() => void saveSetting("appearance", "notebook")}><span><Notebook size={17} /><strong>Notion 笔记</strong></span><small>紧凑画布、纯平表面与低饱和标记</small></button><button className={appearance === "neo" ? "active" : ""} aria-label="Neo-Brutalism" aria-pressed={appearance === "neo"} onClick={() => void saveSetting("appearance", "neo")}><span><SquaresFour size={17} /><strong>Neo-Brutalism</strong></span><small>多色印刷、硬边框与机械反馈</small></button></div></div>
           <div><div><strong>界面主题</strong><small>选择适合长时间使用的明暗风格</small></div><div className="theme-toggle" role="group" aria-label="界面主题"><button className={(data.settings.theme ?? "light") === "light" ? "active" : ""} aria-pressed={(data.settings.theme ?? "light") === "light"} onClick={() => void saveSetting("theme", "light")}><Sun size={16} />浅色</button><button className={data.settings.theme === "dark" ? "active" : ""} aria-pressed={data.settings.theme === "dark"} onClick={() => void saveSetting("theme", "dark")}><Moon size={16} />深色</button></div></div>
+          <div><div><strong>背景图片</strong><small>上传一张图作为应用背景，留空则用默认环境</small></div><div className="background-control"><input ref={backgroundInput} type="file" accept="image/*" hidden onChange={handleBackgroundUpload} /><Button variant="secondary" size="sm" onClick={() => backgroundInput.current?.click()}><ImageSquare size={15} />选择图片</Button>{data.settings.background_image ? <Button variant="ghost" size="sm" onClick={clearBackground}><Trash size={15} />恢复默认</Button> : null}</div></div>
           <label><div><strong>每周起始日</strong><small>影响今日计划的本周视图</small></div><select value={data.settings.weekStart ?? "monday"} onChange={(event) => void saveSetting("weekStart", event.target.value)}><option value="monday">星期一</option><option value="sunday">星期日</option></select></label>
           <label><div><strong>日期格式</strong><small>用于列表和时间线</small></div><select value={data.settings.dateFormat ?? "zh-CN"} onChange={(event) => void saveSetting("dateFormat", event.target.value)}><option value="zh-CN">中文日期</option><option value="iso">YYYY-MM-DD</option></select></label>
           <fieldset className="dashboard-options"><legend><strong>首页模块摘要</strong><small>选择首页底部需要显示的模块</small></legend><div>{dashboardOptions.map((option) => <label key={option.value}><input type="checkbox" checked={visibleModules.includes(option.value)} onChange={(event) => toggleDashboardModule(option.value, event.target.checked)} />{option.label}</label>)}</div></fieldset>

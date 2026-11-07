@@ -67,6 +67,7 @@ export function AppLayout() {
   const appearance = normalizeAppearance(data.settings.appearance);
   const theme = data.settings.theme === "dark" ? "dark" : "light";
   const ambientScene = chooseAmbientScene(currentPage.module, theme);
+  const customBackground = typeof data.settings.background_image === "string" && data.settings.background_image.startsWith("data:image") ? data.settings.background_image : "";
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -141,10 +142,10 @@ export function AppLayout() {
       data-module={currentPage.module}
       data-ambient={ambientScene}
     >
-      {appearance === "liquid" ? <AmbientEnvironment scene={ambientScene} /> : appearance === "notebook" ? <NotebookEnvironment /> : null}
+      {customBackground ? <CustomBackground url={customBackground} /> : appearance === "liquid" ? <AmbientEnvironment scene={ambientScene} /> : appearance === "notebook" ? <NotebookEnvironment /> : null}
       <a className="skip-link" href="#main-content">跳到主要内容</a>
       <aside className="sidebar glass-regular">
-        <div className="brand"><div className="brand-mark" aria-hidden="true"><img src={appearance === "neo" ? "/assets/neo/muzi-app-icon-brand.png" : "/assets/brand/muzi-mark.svg"} alt="" draggable={false} /></div><div className="brand-copy"><strong>心魂工作台</strong><span>本地个人空间</span></div>{appearance === "neo" ? <span className="brand-edition">NEO / PERSONAL CONTROL DESK</span> : null}</div>
+        <div className="brand"><div className="brand-mark" aria-hidden="true"><img src="/assets/brand/app-icon.png" alt="" draggable={false} /></div><div className="brand-copy"><strong>心魂工作台</strong><span>本地个人空间</span></div>{appearance === "neo" ? <span className="brand-edition">NEO / PERSONAL CONTROL DESK</span> : null}</div>
         <Button className="quick-create" onClick={() => setQuickOpen(true)}><Plus size={18} />快速新增</Button>
         <nav aria-label="主导航">
           {groups.map((group) => (
@@ -193,6 +194,10 @@ function NeoModuleEmblem({ module }: { module: ModuleArtworkName }) {
 
 function NotebookEnvironment() {
   return <div className="notebook-environment" aria-hidden="true" />;
+}
+
+function CustomBackground({ url }: { url: string }) {
+  return <div className="custom-background" aria-hidden="true" style={{ backgroundImage: `url("${url}")` }} />;
 }
 
 function ExitScreen() {
