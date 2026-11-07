@@ -15,6 +15,22 @@ export const collectionDefinitions = {
     fields: ["content", "archived_at", "converted_type", "converted_id"],
     search: ["content"],
   },
+  deskImages: {
+    table: "desk_images",
+    title: "name",
+    module: "desk",
+    required: ["data_url"],
+    fields: ["name", "data_url", "mime_type"],
+    search: ["name"],
+  },
+  deskNotes: {
+    table: "desk_notes",
+    title: "name",
+    module: "desk",
+    required: ["name"],
+    fields: ["name", "content"],
+    search: ["name", "content"],
+  },
   mediaContents: {
     table: "media_contents",
     title: "title",

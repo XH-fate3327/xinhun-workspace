@@ -41,10 +41,10 @@ export const APP_PORT = Number(process.env.MUZI_PORT ?? 4317);
 
 function defaultDataRoot(): string {
   if (process.platform === "win32") {
-    return path.join(process.env.LOCALAPPDATA ?? process.env.APPDATA ?? os.homedir(), "MuziWorkspace");
+    return path.join(process.env.LOCALAPPDATA ?? process.env.APPDATA ?? os.homedir(), "XinhunWorkspace");
   }
   if (process.platform === "darwin") {
-    return path.join(os.homedir(), "Library", "Application Support", "MuziWorkspace");
+    return path.join(os.homedir(), "Library", "Application Support", "XinhunWorkspace");
   }
-  return path.join(process.env.XDG_DATA_HOME ?? path.join(os.homedir(), ".local", "share"), "MuziWorkspace");
+  return path.join(process.env.XDG_DATA_HOME ?? path.join(os.homedir(), ".local", "share"), "XinhunWorkspace");
 }

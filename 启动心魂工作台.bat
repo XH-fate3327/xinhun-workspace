@@ -7,7 +7,7 @@ set "MUZI_DATA_DIR=%~dp0data"
 call npm run app:start
 if errorlevel 1 (
   echo.
-  echo 木子工作台启动失败，请确认 node-runtime 目录完整。
+  echo 心魂工作台启动失败，请确认 node-runtime 目录完整。
   pause
 )
 endlocal

@@ -27,7 +27,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const manager = new DatabaseManager(paths);
   const store = new AppStore(manager);
   const backups = new BackupManager(manager, store, paths);
-  const app = Fastify({ logger: options.logger ?? false, bodyLimit: 2 * 1024 * 1024 });
+  const app = Fastify({ logger: options.logger ?? false, bodyLimit: 20 * 1024 * 1024 });
 
   app.addHook("onRequest", async (request, reply) => {
     if (!["POST", "PATCH", "PUT", "DELETE"].includes(request.method)) return;
@@ -50,7 +50,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   app.get("/api/health", async () => ({
     data: {
-      application: "muzi-workspace",
+      application: "xinhun-workspace",
       buildId: process.env.MUZI_BUILD_ID ?? "development",
       instanceId: process.env.MUZI_INSTANCE_ID ?? null,
       status: "ok",
@@ -246,7 +246,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       // 缺失的构建资源必须返回 404。若退回 index.html，浏览器会把 HTML
       // 当作 JavaScript/CSS 加载并得到一片白屏。
       if (request.url.startsWith("/assets/")) {
-        return reply.code(404).send({ error: { code: "ASSET_NOT_FOUND", message: "页面资源不存在，请重新启动木子工作台" } });
+        return reply.code(404).send({ error: { code: "ASSET_NOT_FOUND", message: "页面资源不存在，请重新启动心魂工作台" } });
       }
       return reply.header("Cache-Control", "no-cache").sendFile("index.html");
     });

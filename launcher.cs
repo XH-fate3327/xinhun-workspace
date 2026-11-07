@@ -18,7 +18,7 @@ class Launcher
             MessageBox.Show(
                 "Missing runtime files:\n" + node + "\n" + script +
                 "\n\nPlease make sure the folder is complete (node-runtime and scripts must both be present).",
-                "Muzi Workspace", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "Xinhun Workspace", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
@@ -40,14 +40,14 @@ class Launcher
             if (p.ExitCode != 0)
             {
                 MessageBox.Show(
-                    "Failed to start Muzi Workspace. See the log:\n" +
+                    "Failed to start Xinhun Workspace. See the log:\n" +
                     Path.Combine(dataDir, "logs", "app.log"),
-                    "Muzi Workspace", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    "Xinhun Workspace", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Startup failed: " + ex.Message, "Muzi Workspace",
+            MessageBox.Show("Startup failed: " + ex.Message, "Xinhun Workspace",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }

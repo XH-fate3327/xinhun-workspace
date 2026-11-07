@@ -563,5 +563,5 @@ test("restores trash, persists appearance and theme, creates backup and download
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "导出 ZIP" }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/muzi-export-.*\.zip/);
+  expect(download.suggestedFilename()).toMatch(/xinhun-export-.*\.zip/);
 });

@@ -4,6 +4,7 @@ export const moduleArtworkSources = {
   dashboard: "/assets/module-icons/dashboard-v1.webp",
   today: "/assets/module-icons/today-v1.webp",
   media: "/assets/module-icons/media-v1.webp",
+  desk: "/assets/module-icons/media-v1.webp",
   development: "/assets/module-icons/development-v1.webp",
   consulting: "/assets/module-icons/consulting-v1.webp",
   fitness: "/assets/module-icons/fitness-v1.webp",

@@ -21,6 +21,7 @@ const groups = [
   ] },
   { label: "工作", links: [
     { to: "/media", label: "自媒体", module: "media", tone: "coral" },
+    { to: "/desk", label: "处理台", module: "desk", tone: "cyan" },
     { to: "/development", label: "开发工作", module: "development", tone: "teal" },
     { to: "/consulting", label: "咨询工作", module: "consulting", tone: "amber" },
   ] },
@@ -38,7 +39,7 @@ const collectionRoutes: Record<string, string> = {
   consultingInteractions: "/consulting", consultingDeliverables: "/consulting", consultingFollowups: "/consulting",
   consultingTimeEntries: "/consulting", workoutTemplates: "/fitness", workouts: "/fitness", bodyMetrics: "/fitness",
   nutritionTargets: "/diet", foods: "/diet", meals: "/diet", mealItems: "/diet", entertainmentItems: "/entertainment",
-  playSessions: "/entertainment", quickMemos: "/",
+  playSessions: "/entertainment", quickMemos: "/", deskImages: "/desk", deskNotes: "/desk",
 };
 
 const routeMeta: Record<string, { label: string; module: ModuleArtworkName; tone: string; index: string }> = {
@@ -51,6 +52,7 @@ const routeMeta: Record<string, { label: string; module: ModuleArtworkName; tone
   "/diet": { label: "饮食计划", module: "diet", tone: "apricot", index: "06" },
   "/entertainment": { label: "游戏娱乐", module: "entertainment", tone: "indigo", index: "07" },
   "/settings": { label: "数据与设置", module: "settings", tone: "graphite", index: "08" },
+  "/desk": { label: "处理台", module: "desk", tone: "cyan", index: "09" },
 };
 
 export function AppLayout() {
@@ -126,7 +128,7 @@ export function AppLayout() {
       await saveNow();
       await api.saveAndExit();
       setExitState("done");
-      document.title = "木子工作台已安全退出";
+      document.title = "心魂工作台已安全退出";
     } catch {
       setExitState("error");
     }
@@ -142,7 +144,7 @@ export function AppLayout() {
       {appearance === "liquid" ? <AmbientEnvironment scene={ambientScene} /> : appearance === "notebook" ? <NotebookEnvironment /> : null}
       <a className="skip-link" href="#main-content">跳到主要内容</a>
       <aside className="sidebar glass-regular">
-        <div className="brand"><div className="brand-mark" aria-hidden="true"><img src={appearance === "neo" ? "/assets/neo/muzi-app-icon-brand.png" : "/assets/brand/muzi-mark.svg"} alt="" draggable={false} /></div><div className="brand-copy"><strong>木子工作台</strong><span>本地个人空间</span></div>{appearance === "neo" ? <span className="brand-edition">NEO / PERSONAL CONTROL DESK</span> : null}</div>
+        <div className="brand"><div className="brand-mark" aria-hidden="true"><img src={appearance === "neo" ? "/assets/neo/muzi-app-icon-brand.png" : "/assets/brand/muzi-mark.svg"} alt="" draggable={false} /></div><div className="brand-copy"><strong>心魂工作台</strong><span>本地个人空间</span></div>{appearance === "neo" ? <span className="brand-edition">NEO / PERSONAL CONTROL DESK</span> : null}</div>
         <Button className="quick-create" onClick={() => setQuickOpen(true)}><Plus size={18} />快速新增</Button>
         <nav aria-label="主导航">
           {groups.map((group) => (
@@ -166,7 +168,7 @@ export function AppLayout() {
             <IconButton label={collapsed ? "展开导航" : "收起导航"} onClick={() => setCollapsed((value) => !value)}><SidebarSimple size={20} /></IconButton>
             <span className="toolbar-page-icon" data-tone={currentPage.tone} aria-hidden="true"><ModuleArtwork module={currentPage.module} /></span>
             <div className="toolbar-context"><strong>{currentPage.label}</strong><span>{new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date())}</span></div>
-            {appearance === "neo" ? <span className="topbar-index">{currentPage.index} / 08</span> : null}
+            {appearance === "neo" ? <span className="topbar-index">{currentPage.index} / 09</span> : null}
           </div>
           <div className="topbar-actions">
             <button className="search-trigger glass-clear" aria-label="搜索所有内容" title="搜索所有内容" onClick={() => setSearchOpen(true)}><MagnifyingGlass size={18} /><span>搜索所有内容</span><kbd><Command size={12} />K</kbd></button>
@@ -194,7 +196,7 @@ function NotebookEnvironment() {
 }
 
 function ExitScreen() {
-  return <div className="exit-screen" role="status"><div className="exit-card"><CheckCircle size={32} weight="fill" /><strong>数据已保存，木子工作台已安全退出</strong><p>现在可以关闭这个页面。下次双击启动图标，会重新启动并打开工作台。</p></div></div>;
+  return <div className="exit-screen" role="status"><div className="exit-card"><CheckCircle size={32} weight="fill" /><strong>数据已保存，心魂工作台已安全退出</strong><p>现在可以关闭这个页面。下次双击启动图标，会重新启动并打开工作台。</p></div></div>;
 }
 
 function SaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "error" }) {
@@ -219,7 +221,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
       return result;
     }, {});
   }, [search.data]);
-  const moduleNames: Record<string, string> = { dashboard: "首页", today: "今日计划", media: "自媒体", development: "开发工作", consulting: "咨询工作", fitness: "健身计划", diet: "饮食计划", entertainment: "游戏娱乐" };
+  const moduleNames: Record<string, string> = { dashboard: "首页", today: "今日计划", media: "自媒体", desk: "处理台", development: "开发工作", consulting: "咨询工作", fitness: "健身计划", diet: "饮食计划", entertainment: "游戏娱乐" };
   return (
     <Modal open={open} title="搜索工作台" description="按模块查找标题、笔记和记录内容" onClose={onClose} wide>
       <div className="command-search glass-clear"><MagnifyingGlass size={20} /><input autoFocus aria-label="搜索关键词" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入关键词" /></div>

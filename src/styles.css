@@ -1,5 +1,5 @@
 /* ============================================================================
-   木子工作台 — macOS Liquid Glass 设计系统
+   心魂工作台 — macOS Liquid Glass 设计系统
    1. 设计令牌 / 2. 模块色场 / 3. 基础 / 4. 环境背景 / 5. 玻璃材质
    6. 外壳 / 7. 排版 / 8. 控件 / 9. 面板 / 10. 各模块 / 11. 弹层 / 12. 状态
    13. 无障碍与降级 / 14. 响应式
@@ -2012,3 +2012,31 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
   .game-grid, .history-table, .meal-columns { grid-template-columns: 1fr; }
   .consult-grid, .fitness-grid, .settings-grid { gap: 12px; }
 }
+
+/* ——— 处理台 ——— */
+.desk-layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+.desk-board, .desk-notes { border: 1px solid var(--border); border-radius: var(--radius-panel); background: var(--surface); padding: 16px; }
+.desk-board-toolbar, .desk-notes-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; color: var(--text-soft); font-size: 11px; }
+.desk-board-toolbar kbd { border: 1px solid var(--border); border-radius: 5px; background: color-mix(in srgb, var(--surface-raised) 76%, transparent); color: var(--text-faint); padding: 1px 6px; font: 10px var(--font-ui); }
+.desk-dropzone { display: grid; place-items: center; gap: 8px; width: 100%; min-height: 240px; border: 1.5px dashed var(--border-strong); border-radius: var(--radius-inset); background: var(--surface-inset); color: var(--text-soft); cursor: pointer; padding: 24px; text-align: center; }
+.desk-dropzone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.desk-dropzone strong { color: var(--text); font-size: 13px; }
+.desk-dropzone small { color: var(--text-faint); font-size: 11px; }
+.desk-image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.desk-image-card { border: 1px solid var(--border); border-radius: var(--radius-inset); overflow: hidden; background: var(--surface-raised); }
+.desk-image-thumb { display: block; width: 100%; aspect-ratio: 4 / 3; border: 0; padding: 0; cursor: pointer; background: var(--surface-inset); overflow: hidden; }
+.desk-image-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--motion-control) ease; }
+.desk-image-thumb:hover img { transform: scale(1.04); }
+.desk-image-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 9px; }
+.desk-image-meta span { flex: 1; color: var(--text-soft); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desk-notes-list { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; margin-bottom: 12px; }
+.desk-note-item { display: flex; align-items: center; gap: 8px; width: 100%; border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; padding: 8px 10px; color: var(--text-soft); cursor: pointer; text-align: left; font: 12px var(--font-ui); }
+.desk-note-item:hover { background: var(--surface-muted); color: var(--text); }
+.desk-note-item.active { background: var(--accent-soft); color: var(--accent-deep); border-color: color-mix(in srgb, var(--accent) 24%, transparent); }
+.desk-note-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desk-note-editor { display: grid; gap: 10px; }
+.desk-note-name { border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-raised); color: var(--text); padding: 9px 11px; font: 12px var(--font-ui); }
+.desk-note-content { min-height: 170px; border: 1px solid var(--border); border-radius: var(--radius-inset); background: var(--surface-raised); color: var(--text); padding: 11px 12px; font: 12px var(--font-ui); line-height: 1.6; resize: vertical; }
+.desk-note-name:focus, .desk-note-content:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+.desk-image-full { display: block; width: 100%; max-height: 72vh; object-fit: contain; border-radius: var(--radius-inset); background: var(--surface-inset); }
+@media (max-width: 1080px) { .desk-layout { grid-template-columns: 1fr; } }

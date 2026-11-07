@@ -11,8 +11,8 @@ const port = Number(process.env.MUZI_PORT ?? 4317);
 const baseUrl = `http://127.0.0.1:${port}`;
 const dataRoot = path.resolve(process.env.MUZI_DATA_DIR ?? defaultDataRoot());
 const logsDir = path.join(dataRoot, "logs");
-const pidFile = path.join(dataRoot, "muzi-workspace.pid");
-const startLockFile = path.join(dataRoot, "muzi-workspace.starting");
+const pidFile = path.join(dataRoot, "xinhun-workspace.pid");
+const startLockFile = path.join(dataRoot, "xinhun-workspace.starting");
 const serverFile = path.join(projectRoot, "dist-server", "server", "index.js");
 const webFile = path.join(projectRoot, "dist", "index.html");
 
@@ -20,14 +20,14 @@ fs.mkdirSync(logsDir, { recursive: true });
 
 if (canReuse(await healthStatus())) {
   maybeOpenBrowser();
-  console.log(`木子工作台已经在运行：${baseUrl}`);
+  console.log(`心魂工作台已经在运行：${baseUrl}`);
   process.exit(0);
 }
 
 const launchLock = await acquireLaunchLock();
 if (launchLock === null) {
   maybeOpenBrowser();
-  console.log(`木子工作台已经在运行：${baseUrl}`);
+  console.log(`心魂工作台已经在运行：${baseUrl}`);
   process.exit(0);
 }
 const releaseLaunchLock = () => {
@@ -40,7 +40,7 @@ process.once("exit", releaseLaunchLock);
 const existingStatus = await healthStatus();
 if (canReuse(existingStatus)) {
   maybeOpenBrowser();
-  console.log(`木子工作台已经在运行：${baseUrl}`);
+  console.log(`心魂工作台已经在运行：${baseUrl}`);
   process.exit(0);
 }
 
@@ -84,9 +84,9 @@ fs.writeFileSync(pidFile, JSON.stringify({ pid: child.pid, projectRoot, buildId,
 
 for (let attempt = 0; attempt < 80; attempt += 1) {
   const status = await healthStatus();
-  if (status?.application === "muzi-workspace" && status.buildId === buildId && status.instanceId === instanceId) {
+  if (status?.application === "xinhun-workspace" && status.buildId === buildId && status.instanceId === instanceId) {
     maybeOpenBrowser();
-    console.log(`木子工作台已启动：${baseUrl}`);
+    console.log(`心魂工作台已启动：${baseUrl}`);
     console.log(`数据目录：${dataRoot}`);
     process.exit(0);
   }
@@ -114,7 +114,7 @@ function canReuse(status) {
   return Boolean(
     status
       && buildId
-      && status.application === "muzi-workspace"
+      && status.application === "xinhun-workspace"
       && status.buildId === buildId,
   );
 }
@@ -141,7 +141,7 @@ async function stopStaleService(status) {
     );
 
   if (!recordedProcessMatches) {
-    console.error(`端口 ${port} 上存在无法确认身份的服务。为保护其他程序，木子工作台没有结束该进程。`);
+    console.error(`端口 ${port} 上存在无法确认身份的服务。为保护其他程序，心魂工作台没有结束该进程。`);
     process.exit(1);
   }
 
@@ -252,7 +252,7 @@ async function acquireLaunchLock() {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
   }
-  console.error("另一个木子工作台启动过程仍在进行，请稍后再试。");
+  console.error("另一个心魂工作台启动过程仍在进行，请稍后再试。");
   process.exit(1);
 }
 
