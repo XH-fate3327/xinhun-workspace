@@ -39,7 +39,7 @@ const collectionRoutes: Record<string, string> = {
   consultingInteractions: "/consulting", consultingDeliverables: "/consulting", consultingFollowups: "/consulting",
   consultingTimeEntries: "/consulting", workoutTemplates: "/fitness", workouts: "/fitness", bodyMetrics: "/fitness",
   nutritionTargets: "/diet", foods: "/diet", meals: "/diet", mealItems: "/diet", entertainmentItems: "/entertainment",
-  playSessions: "/entertainment", quickMemos: "/", deskImages: "/desk", deskNotes: "/desk",
+  playSessions: "/entertainment", quickMemos: "/", deskProjects: "/desk",
 };
 
 const routeMeta: Record<string, { label: string; module: ModuleArtworkName; tone: string; index: string }> = {
