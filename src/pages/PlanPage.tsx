@@ -51,14 +51,40 @@ function dateOf(weekKey: string, dayIndex: number): string {
   return addDays(weekKey, dayIndex);
 }
 
-function weekNumber(weekKey: string): number {
-  const monday = new Date(weekKey + "T00:00:00");
-  const year = monday.getFullYear();
+// 用户规定：2026 年第 1 周 = 2026-11-16；年末那一周（周一本年）算本年最后一周。
+const ANCHOR_WEEK = "2026-11-16";
+
+function firstMondayOf(year: number): string {
   const jan1 = new Date(year, 0, 1);
   const jan1Weekday = (jan1.getDay() + 6) % 7; // 0=Mon
-  const firstMonday = new Date(year, 0, 1 + (jan1Weekday === 0 ? 0 : 7 - jan1Weekday));
-  const days = Math.round((monday.getTime() - firstMonday.getTime()) / 86400000);
-  return Math.floor(days / 7) + 1;
+  return toYmd(new Date(year, 0, 1 + (jan1Weekday === 0 ? 0 : 7 - jan1Weekday)));
+}
+
+function weeksBetween(a: string, b: string): number {
+  return Math.round((new Date(b + "T00:00:00").getTime() - new Date(a + "T00:00:00").getTime()) / (7 * 86400000));
+}
+
+function weekInfo(monday: string): { year: number; week: number } {
+  const d = new Date(monday + "T00:00:00");
+  const year = d.getFullYear();
+  if (year === 2026) {
+    if (monday >= ANCHOR_WEEK) return { year: 2026, week: weeksBetween(ANCHOR_WEEK, monday) + 1 };
+    // 2026 但早于锚点（计划开始前的周）：回退到本年度首个周一规则，避免出现「2025 第97周」
+    return { year: 2026, week: weeksBetween(firstMondayOf(2026), monday) + 1 };
+  }
+  return { year, week: weeksBetween(firstMondayOf(year), monday) + 1 };
+}
+
+function weeksOfYear(year: number): string[] {
+  const start = year === 2026 ? ANCHOR_WEEK : firstMondayOf(year);
+  const out: string[] = [];
+  let m = start;
+  for (let i = 0; i < 60; i += 1) {
+    if (new Date(m + "T00:00:00").getFullYear() > year) break;
+    out.push(m);
+    m = addDays(m, 7);
+  }
+  return out;
 }
 
 function fmtMD(ymd: string): string {
@@ -109,6 +135,8 @@ export function PlanPage() {
   const [filterYear, setFilterYear] = useState<number>(() => new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState<number>(() => new Date().getMonth() + 1);
   const [noteEdit, setNoteEdit] = useState<{ date: string; text: string } | null>(null);
+  const [jumpYear, setJumpYear] = useState<number>(() => weekInfo(thisWeek).year);
+  const [jumpWeek, setJumpWeek] = useState<number>(() => weekInfo(thisWeek).week);
 
   const slots = data.planSlots;
   const completions = data.planCompletions;
@@ -125,6 +153,17 @@ export function PlanPage() {
 
   const goWeek = (delta: number) => setWeekKey((key) => addDays(key, delta * 7));
   const weekRange = `${fmtMD(weekKey)} - ${fmtMD(addDays(weekKey, 6))}`;
+  const jumpWeeks = weeksOfYear(jumpYear);
+  const changeJumpYear = (year: number) => {
+    setJumpYear(year);
+    const list = weeksOfYear(year);
+    setJumpWeek((w) => Math.min(w, list.length) || 1);
+  };
+  const doJump = () => {
+    const list = weeksOfYear(jumpYear);
+    const target = list[jumpWeek - 1];
+    if (target) setWeekKey(target);
+  };
 
   const setWeekDefault = async (mode: EditMode, weeks = 1) => {
     await run(() => api.saveSettings({ [`planDefaultMode:${weekKey}`]: { mode, weeks } }));
@@ -269,10 +308,20 @@ export function PlanPage() {
       <div className="plan-toolbar">
         <button className="plan-nav-btn" onClick={() => goWeek(-1)} aria-label="上一周"><CaretLeft size={18} /></button>
         <div className="plan-week-label">
-          <strong>第 {weekNumber(weekKey)} 周</strong>
+          <strong>第 {weekInfo(weekKey).week} 周</strong>
           <span>{weekRange}{isPast ? " · 已过去（只读）" : weekKey === thisWeek ? " · 本周" : ""}</span>
         </div>
         <button className="plan-nav-btn" onClick={() => goWeek(1)} aria-label="下一周"><CaretRight size={18} /></button>
+        <div className="plan-jump">
+          <span>快速跳转</span>
+          <select value={jumpYear} onChange={(e) => changeJumpYear(Number(e.target.value))}>
+            {[2025, 2026, 2027, 2028].map((y) => <option key={y} value={y}>{y} 年</option>)}
+          </select>
+          <select value={jumpWeek} onChange={(e) => setJumpWeek(Number(e.target.value))}>
+            {jumpWeeks.map((w, i) => <option key={w} value={i + 1}>第 {i + 1} 周（{fmtMD(w)}）</option>)}
+          </select>
+          <Button size="sm" variant="secondary" onClick={doJump}>跳转</Button>
+        </div>
         {!isPast ? (
           <label className="plan-default-mode">
             本周默认编辑模式

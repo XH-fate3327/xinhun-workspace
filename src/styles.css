@@ -2052,7 +2052,9 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 
 /* ——— 任务计划 ——— */
 .plan-page { display: grid; gap: 16px; }
-.plan-toolbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-glass); background: var(--frosted-bg); -webkit-backdrop-filter: var(--frosted-filter); backdrop-filter: var(--frosted-filter); box-shadow: var(--frosted-sheen); }
+.plan-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-glass); background: var(--frosted-bg); -webkit-backdrop-filter: var(--frosted-filter); backdrop-filter: var(--frosted-filter); box-shadow: var(--frosted-sheen); }
+.plan-jump { display: flex; align-items: center; gap: 6px; margin-left: 8px; padding-left: 14px; border-left: 1px solid var(--border); color: var(--text-soft); font-size: 11px; }
+.plan-jump select { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); padding: 4px 8px; font: 11px var(--font-ui); }
 .plan-nav-btn { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-raised); color: var(--text-soft); cursor: pointer; }
 .plan-nav-btn:hover { border-color: var(--accent); color: var(--text); }
 .plan-week-label { display: grid; gap: 1px; }
