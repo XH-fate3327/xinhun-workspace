@@ -2101,6 +2101,7 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 .plan-calendar-holiday { display: inline-flex; align-items: center; gap: 2px; font-size: 8px; color: var(--accent-deep); max-width: 100%; overflow: hidden; white-space: nowrap; }
 .plan-calendar-holiday em { font-style: normal; font-size: 7px; background: var(--accent); color: #fff; border-radius: 3px; padding: 0 2px; }
 .plan-calendar-work { font-size: 8px; color: var(--text-faint); background: var(--surface-muted); border-radius: 3px; padding: 0 3px; }
+.plan-calendar-term { display: block; font-size: 8px; line-height: 1.1; color: var(--text-soft); }
 .plan-calendar-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
 .plan-calendar-day.has-note { background: var(--accent-soft); }
 .plan-calendar-note { display: block; font-size: 8px; line-height: 1.15; color: var(--accent-deep); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 1px; }

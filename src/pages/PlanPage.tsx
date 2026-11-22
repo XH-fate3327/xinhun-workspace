@@ -5,7 +5,7 @@ import { useWorkspace } from "../WorkspaceContext";
 import { classNames } from "../utils";
 import { Button, IconButton, Modal, PageHeader } from "../components/ui";
 import { ModuleArtwork } from "../components/ModuleArtwork";
-import { holidayOf } from "../data/holidays";
+import { holidayOf, solarTermOf } from "../data/holidays";
 import type { Entity } from "../types";
 
 const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -413,6 +413,7 @@ export function PlanPage() {
               {filteredMonthDays.days.map(({ ymd, day, weekday }) => {
                 const note = noteOfDate(ymd);
                 const holiday = holidayOf(ymd);
+                const term = solarTermOf(ymd);
                 const isWeekend = weekday >= 5;
                 const isOff = holiday?.off === true;
                 const isWork = holiday != null && holiday.off === false;
@@ -426,6 +427,7 @@ export function PlanPage() {
                     <span className="plan-calendar-num">{day}</span>
                     {isOff ? <span className="plan-calendar-holiday">{holiday?.name}<em>休</em></span> : null}
                     {isWork ? <span className="plan-calendar-work">班</span> : null}
+                    {term && term !== holiday?.name ? <span className="plan-calendar-term">{term}</span> : null}
                     {note ? <span className="plan-calendar-note">{note}</span> : null}
                   </button>
                 );
