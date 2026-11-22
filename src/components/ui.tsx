@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type MouseEvent as ReactMouseEvent } from "react";
 import { useForm } from "react-hook-form";
 import { X, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
 import { classNames } from "../utils";
@@ -60,17 +60,20 @@ export function Skeleton({ lines = 4 }: { lines?: number }) {
   return <div className="skeleton-stack" aria-label="正在加载">{Array.from({ length: lines }, (_, index) => <div className="skeleton-line" key={index} />)}</div>;
 }
 
-export function Modal({ title, description, open, onClose, children, wide = false }: {
+export function Modal({ title, description, open, onClose, children, wide = false, draggable = false }: {
   title: string;
   description?: string;
   open: boolean;
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
+  draggable?: boolean;
 }) {
   const modalRef = useRef<HTMLElement>(null);
   const titleId = useId();
   const descriptionId = useId();
+  const [drag, setDrag] = useState({ x: 0, y: 0 });
+  const dragStart = useRef<{ mx: number; my: number; dx: number; dy: number } | null>(null);
   useEffect(() => {
     if (!open) return;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -96,11 +99,45 @@ export function Modal({ title, description, open, onClose, children, wide = fals
       previousFocus?.focus();
     };
   }, [open, onClose]);
+  // 每次打开时把拖动偏移归零
+  useEffect(() => {
+    if (open) setDrag({ x: 0, y: 0 });
+  }, [open]);
+  // 需要时可拖动：按住标题栏拖动整窗
+  useEffect(() => {
+    if (!draggable || !open) return;
+    const onMove = (event: MouseEvent) => {
+      if (!dragStart.current) return;
+      const { mx, my, dx, dy } = dragStart.current;
+      setDrag({ x: dx + (event.clientX - mx), y: dy + (event.clientY - my) });
+    };
+    const onUp = () => { dragStart.current = null; };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [draggable, open]);
   if (!open) return null;
+  const headerDown = (event: ReactMouseEvent) => {
+    if (!draggable) return;
+    if ((event.target as HTMLElement).closest("button")) return;
+    dragStart.current = { mx: event.clientX, my: event.clientY, dx: drag.x, dy: drag.y };
+    event.preventDefault();
+  };
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section ref={modalRef} className={classNames("modal", "glass-regular", wide && "modal-wide")} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined}>
-        <header className="modal-header">
+      <section
+        ref={modalRef}
+        className={classNames("modal", "glass-regular", wide && "modal-wide", draggable && "modal-draggable")}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        style={draggable ? { position: "relative", left: drag.x, top: drag.y } : undefined}
+      >
+        <header className="modal-header" onMouseDown={headerDown} style={draggable ? { cursor: "move", userSelect: "none" } : undefined}>
           <div><h2 id={titleId}>{title}</h2>{description ? <p id={descriptionId}>{description}</p> : null}</div>
           <IconButton label="关闭" onClick={onClose}><X size={20} /></IconButton>
         </header>

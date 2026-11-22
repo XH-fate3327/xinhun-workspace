@@ -374,7 +374,7 @@ export function PlanPage() {
       </div>
 
       {editing ? (
-        <Modal open onClose={() => setEditing(null)} title={`${DAY_NAMES[editing.day]} · ${TIME_ROWS[editing.row].start}-${TIME_ROWS[editing.row].end}`} wide>
+        <Modal open onClose={() => setEditing(null)} title={`${DAY_NAMES[editing.day]} · ${TIME_ROWS[editing.row].start}-${TIME_ROWS[editing.row].end}`} wide draggable>
           <div className="plan-edit">
             {isPast ? (
               <div className="plan-edit-readonly">
