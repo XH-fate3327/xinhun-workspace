@@ -1,6 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
+// 默认独立窗口尺寸（2026-11-22 从当前运行窗口实测：1317x853，外框尺寸）
+const DEFAULT_WINDOW_SIZE = "1317,853";
+
 export function defaultDataRootFor(platform, environment, homeDirectory) {
   const platformPath = platform === "win32" ? path.win32 : path.posix;
   if (platform === "win32") {
@@ -27,7 +30,7 @@ export function browserOpenCommandFor(platform, url) {
       "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
     ];
     for (const exe of candidates) {
-      if (fs.existsSync(exe)) return { command: exe, args: [`--app=${url}`] };
+      if (fs.existsSync(exe)) return { command: exe, args: [`--app=${url}`, `--window-size=${DEFAULT_WINDOW_SIZE}`] };
     }
     return { command: "cmd.exe", args: ["/d", "/s", "/c", "start", "", url] };
   }
