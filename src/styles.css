@@ -2094,9 +2094,12 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 .plan-calendar-day { display: grid; place-items: center; gap: 1px; min-height: 44px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-raised); color: var(--text-soft); cursor: pointer; font-size: 11px; }
 .plan-calendar-day:hover { border-color: var(--accent); color: var(--text); }
 .plan-calendar-day.is-weekend { background: var(--surface-inset); }
-.plan-calendar-day.is-holiday { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.plan-calendar-day.is-holiday { border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-soft); }
+.plan-calendar-day.is-workday { border-color: color-mix(in srgb, var(--text-faint) 30%, transparent); }
 .plan-calendar-num { font-weight: 560; color: var(--text); }
-.plan-calendar-holiday { font-size: 8px; color: var(--accent-deep); }
+.plan-calendar-holiday { display: inline-flex; align-items: center; gap: 2px; font-size: 8px; color: var(--accent-deep); max-width: 100%; overflow: hidden; white-space: nowrap; }
+.plan-calendar-holiday em { font-style: normal; font-size: 7px; background: var(--accent); color: #fff; border-radius: 3px; padding: 0 2px; }
+.plan-calendar-work { font-size: 8px; color: var(--text-faint); background: var(--surface-muted); border-radius: 3px; padding: 0 3px; }
 .plan-calendar-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
 .plan-edit { display: grid; gap: 14px; }
 .plan-edit-readonly { color: var(--text-soft); font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--surface-inset); }

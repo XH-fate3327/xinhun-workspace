@@ -5,6 +5,7 @@ import { useWorkspace } from "../WorkspaceContext";
 import { classNames } from "../utils";
 import { Button, IconButton, Modal, PageHeader } from "../components/ui";
 import { ModuleArtwork } from "../components/ModuleArtwork";
+import { holidayOf } from "../data/holidays";
 import type { Entity } from "../types";
 
 const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -19,15 +20,7 @@ const TIME_ROWS = [
   { start: "17:00", end: "17:45" },
 ];
 
-const HOLIDAYS: Record<string, string> = {
-  "2026-01-01": "元旦",
-  "2026-02-17": "春节",
-  "2026-04-05": "清明",
-  "2026-05-01": "劳动节",
-  "2026-06-19": "端午",
-  "2026-09-25": "中秋",
-  "2026-10-01": "国庆",
-};
+// 节假日数据见 src/data/holidays.ts（官方 2026 安排，含调休）
 
 type Task = { id: string; text: string };
 type EditMode = "global" | "week" | "range";
@@ -60,10 +53,12 @@ function dateOf(weekKey: string, dayIndex: number): string {
 
 function weekNumber(weekKey: string): number {
   const monday = new Date(weekKey + "T00:00:00");
-  const jan4 = new Date(monday.getFullYear(), 0, 4);
-  const week1 = new Date(jan4);
-  week1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
-  return Math.round((monday.getTime() - week1.getTime()) / (7 * 86400000)) + 1;
+  const year = monday.getFullYear();
+  const jan1 = new Date(year, 0, 1);
+  const jan1Weekday = (jan1.getDay() + 6) % 7; // 0=Mon
+  const firstMonday = new Date(year, 0, 1 + (jan1Weekday === 0 ? 0 : 7 - jan1Weekday));
+  const days = Math.round((monday.getTime() - firstMonday.getTime()) / 86400000);
+  return Math.floor(days / 7) + 1;
 }
 
 function fmtMD(ymd: string): string {
@@ -355,17 +350,20 @@ export function PlanPage() {
               {Array.from({ length: filteredMonthDays.firstWeekday }).map((_, i) => <span key={`e${i}`} className="plan-calendar-empty" />)}
               {filteredMonthDays.days.map(({ ymd, day, weekday }) => {
                 const notes = remarkOfDate(ymd);
-                const holiday = HOLIDAYS[ymd];
+                const holiday = holidayOf(ymd);
                 const isWeekend = weekday >= 5;
+                const isOff = holiday?.off === true;
+                const isWork = holiday != null && holiday.off === false;
                 return (
                   <button
                     key={ymd}
-                    className={classNames("plan-calendar-day", isWeekend && "is-weekend", holiday && "is-holiday")}
+                    className={classNames("plan-calendar-day", isWeekend && "is-weekend", isOff && "is-holiday", isWork && "is-workday")}
                     onClick={() => jumpToDate(ymd)}
-                    title={notes.join(" / ") || undefined}
+                    title={notes.join(" / ") || (holiday ? holiday.name : undefined)}
                   >
                     <span className="plan-calendar-num">{day}</span>
-                    {holiday ? <span className="plan-calendar-holiday">{holiday}</span> : null}
+                    {isOff ? <span className="plan-calendar-holiday">{holiday?.name}<em>休</em></span> : null}
+                    {isWork ? <span className="plan-calendar-work">班</span> : null}
                     {notes.length ? <span className="plan-calendar-dot" title={notes.join(" / ")} /> : null}
                   </button>
                 );
