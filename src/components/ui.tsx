@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type MouseEvent as ReactMouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { X, WarningCircle, SpinnerGap } from "@phosphor-icons/react";
 import { classNames } from "../utils";
@@ -128,7 +129,7 @@ export function Modal({ title, description, open, onClose, children, wide = fals
     dragStart.current = { mx: event.clientX, my: event.clientY, dx: drag.x, dy: drag.y };
     event.preventDefault();
   };
-  return (
+  return createPortal(
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section
         ref={modalRef}
@@ -145,7 +146,8 @@ export function Modal({ title, description, open, onClose, children, wide = fals
         </header>
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
