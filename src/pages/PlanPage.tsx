@@ -53,6 +53,8 @@ function dateOf(weekKey: string, dayIndex: number): string {
 
 // 用户规定：2026 年第 1 周 = 2026-11-16；年末那一周（周一本年）算本年最后一周。
 const ANCHOR_WEEK = "2026-11-16";
+// 年份下拉范围：2020-2040（可按需增改）
+const YEAR_OPTIONS = Array.from({ length: 21 }, (_, i) => 2020 + i);
 
 function firstMondayOf(year: number): string {
   const jan1 = new Date(year, 0, 1);
@@ -315,7 +317,7 @@ export function PlanPage() {
         <div className="plan-jump">
           <span>快速跳转</span>
           <select value={jumpYear} onChange={(e) => changeJumpYear(Number(e.target.value))}>
-            {[2025, 2026, 2027, 2028].map((y) => <option key={y} value={y}>{y} 年</option>)}
+            {YEAR_OPTIONS.map((y) => <option key={y} value={y}>{y} 年</option>)}
           </select>
           <select value={jumpWeek} onChange={(e) => setJumpWeek(Number(e.target.value))}>
             {jumpWeeks.map((w, i) => <option key={w} value={i + 1}>第 {i + 1} 周（{fmtMD(w)}）</option>)}
@@ -395,7 +397,7 @@ export function PlanPage() {
           <div className="plan-filter-row">
             <span>快速定位</span>
             <select value={filterYear} onChange={(e) => setFilterYear(Number(e.target.value))}>
-              {[2025, 2026, 2027, 2028].map((y) => <option key={y} value={y}>{y} 年</option>)}
+              {YEAR_OPTIONS.map((y) => <option key={y} value={y}>{y} 年</option>)}
             </select>
             <select value={filterMonth} onChange={(e) => setFilterMonth(Number(e.target.value))}>
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{m} 月</option>)}
