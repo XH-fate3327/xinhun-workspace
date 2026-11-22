@@ -58,3 +58,7 @@ next-env.d.ts
 *.sqlite-wal
 *.sqlite-shm
 *.lnk
+
+# 便携打包产物
+/dist-package/
+xinhun-portable-*.zip
