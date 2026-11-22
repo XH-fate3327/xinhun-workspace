@@ -18,7 +18,7 @@ type WorkspaceContextValue = {
 };
 
 const emptyState: WorkspaceState = {
-  planItems: [], quickMemos: [], deskProjects: [], planSlots: [], planCompletions: [], mediaContents: [], devProjects: [], devMilestones: [], devWorkItems: [], devLogs: [],
+  planItems: [], quickMemos: [], deskProjects: [], planSlots: [], planCompletions: [], calendarNotes: [], mediaContents: [], devProjects: [], devMilestones: [], devWorkItems: [], devLogs: [],
   clients: [], consultingProjects: [], consultingInteractions: [], consultingDeliverables: [], consultingFollowups: [], consultingTimeEntries: [],
   workoutTemplates: [], workoutTemplateExercises: [], workouts: [], workoutExercises: [], workoutSets: [], bodyMetrics: [], nutritionTargets: [],
   foods: [], meals: [], mealItems: [], entertainmentItems: [], playSessions: [], settings: {}, trash: [],

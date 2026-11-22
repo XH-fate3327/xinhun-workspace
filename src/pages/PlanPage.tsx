@@ -102,16 +102,17 @@ export function PlanPage() {
   const [weekKey, setWeekKey] = useState<string>(thisWeek);
   const [editing, setEditing] = useState<{ day: number; row: number } | null>(null);
   const [editTasks, setEditTasks] = useState<Task[]>([]);
-  const [editRemark, setEditRemark] = useState("");
   const [editMode, setEditMode] = useState<EditMode>("week");
   const [editWeeks, setEditWeeks] = useState(1);
   const [editSlotId, setEditSlotId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [filterYear, setFilterYear] = useState<number>(() => new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState<number>(() => new Date().getMonth() + 1);
+  const [noteEdit, setNoteEdit] = useState<{ date: string; text: string } | null>(null);
 
   const slots = data.planSlots;
   const completions = data.planCompletions;
+  const calendarNotes = data.calendarNotes;
   const isPast = weekKey < thisWeek;
 
   const weekDefault = useMemo<{ mode: EditMode; weeks: number }>(() => {
@@ -136,7 +137,6 @@ export function PlanPage() {
       setEditing({ day, row });
       setEditSlotId(slot?.id ?? null);
       setEditTasks(parseTasks(slot?.tasks));
-      setEditRemark(String(slot?.remark ?? ""));
       setEditMode((slot?.mode as EditMode) ?? weekDefault.mode);
       setEditWeeks(1);
       return;
@@ -146,13 +146,11 @@ export function PlanPage() {
     if (slot) {
       setEditSlotId(slot.id);
       setEditTasks(parseTasks(slot.tasks).map((task) => ({ id: task.id, text: task.text })));
-      setEditRemark(String(slot.remark ?? ""));
       setEditMode((slot.mode as EditMode) ?? weekDefault.mode);
       setEditWeeks(1);
     } else {
       setEditSlotId(null);
       setEditTasks([{ id: newId(), text: "" }]);
-      setEditRemark("");
       setEditMode(weekDefault.mode);
       setEditWeeks(weekDefault.weeks);
     }
@@ -181,7 +179,7 @@ export function PlanPage() {
         await run(() =>
           api.update("planSlots", existing.id, {
             mode: editMode, start_week: startWeek, end_week: endWeek,
-            tasks: JSON.stringify(tasks), remark: editRemark,
+            tasks: JSON.stringify(tasks),
           }),
         );
       } else {
@@ -189,7 +187,7 @@ export function PlanPage() {
           api.create("planSlots", {
             day_index: day, slot_row: row, mode: editMode,
             start_week: startWeek, end_week: endWeek,
-            tasks: JSON.stringify(tasks), remark: editRemark,
+            tasks: JSON.stringify(tasks),
           }),
         );
       }
@@ -227,17 +225,31 @@ export function PlanPage() {
     return { firstWeekday: (first.getDay() + 6) % 7, days };
   }, [filterYear, filterMonth]);
 
-  // 日历上每天关联的备注（取该天所在周、对应列的有效槽位备注）
-  const remarkOfDate = (ymd: string): string[] => {
-    const week = mondayOf(new Date(ymd + "T00:00:00"));
-    const dayIndex = (new Date(ymd + "T00:00:00").getDay() + 6) % 7;
-    const notes: string[] = [];
-    for (let row = 0; row < TIME_ROWS.length; row += 1) {
-      const slot = effectiveSlot(slots, week, dayIndex, row);
-      const remark = String(slot?.remark ?? "").trim();
-      if (remark) notes.push(remark);
+  // 日历备注：按日期独立存储，与时间块无关
+  const noteOfDate = (ymd: string): string => String(calendarNotes.find((n) => n.date === ymd)?.text ?? "").trim();
+
+  const openNote = (ymd: string) => {
+    setNoteEdit({ date: ymd, text: noteOfDate(ymd) });
+  };
+
+  const saveNote = async () => {
+    if (!noteEdit) return;
+    const text = noteEdit.text.trim();
+    const existing = calendarNotes.find((n) => n.date === noteEdit.date);
+    if (existing) {
+      if (text) await run(() => api.update("calendarNotes", existing.id, { text }));
+      else await run(() => api.remove("calendarNotes", existing.id));
+    } else if (text) {
+      await run(() => api.create("calendarNotes", { date: noteEdit.date, text }));
     }
-    return notes;
+    setNoteEdit(null);
+  };
+
+  const clearNote = async () => {
+    if (!noteEdit) return;
+    const existing = calendarNotes.find((n) => n.date === noteEdit.date);
+    if (existing) await run(() => api.remove("calendarNotes", existing.id));
+    setNoteEdit(null);
   };
 
   const jumpToDate = (ymd: string) => {
@@ -319,7 +331,6 @@ export function PlanPage() {
                           <span className={classNames(doneOf(slot, task.id) && "is-done")}>{task.text}</span>
                         </label>
                       ))}
-                      {slot.remark ? <div className="plan-cell-remark">{slot.remark}</div> : null}
                       {slot.mode === "global" ? <span className="plan-mode-tag">全局</span> : null}
                     </div>
                   ) : null}
@@ -349,7 +360,7 @@ export function PlanPage() {
             <div className="plan-calendar-grid">
               {Array.from({ length: filteredMonthDays.firstWeekday }).map((_, i) => <span key={`e${i}`} className="plan-calendar-empty" />)}
               {filteredMonthDays.days.map(({ ymd, day, weekday }) => {
-                const notes = remarkOfDate(ymd);
+                const note = noteOfDate(ymd);
                 const holiday = holidayOf(ymd);
                 const isWeekend = weekday >= 5;
                 const isOff = holiday?.off === true;
@@ -357,18 +368,33 @@ export function PlanPage() {
                 return (
                   <button
                     key={ymd}
-                    className={classNames("plan-calendar-day", isWeekend && "is-weekend", isOff && "is-holiday", isWork && "is-workday")}
-                    onClick={() => jumpToDate(ymd)}
-                    title={notes.join(" / ") || (holiday ? holiday.name : undefined)}
+                    className={classNames("plan-calendar-day", isWeekend && "is-weekend", isOff && "is-holiday", isWork && "is-workday", note && "has-note")}
+                    onClick={() => openNote(ymd)}
+                    title={note || (holiday ? holiday.name : undefined)}
                   >
                     <span className="plan-calendar-num">{day}</span>
                     {isOff ? <span className="plan-calendar-holiday">{holiday?.name}<em>休</em></span> : null}
                     {isWork ? <span className="plan-calendar-work">班</span> : null}
-                    {notes.length ? <span className="plan-calendar-dot" title={notes.join(" / ")} /> : null}
+                    {note ? <span className="plan-calendar-note">{note}</span> : null}
                   </button>
                 );
               })}
             </div>
+            {noteEdit ? (
+              <div className="plan-note-editor">
+                <span className="plan-note-date">{fmtMD(noteEdit.date)} · 备注</span>
+                <input
+                  autoFocus
+                  value={noteEdit.text}
+                  onChange={(e) => setNoteEdit({ date: noteEdit.date, text: e.target.value })}
+                  onKeyDown={(e) => { if (e.key === "Enter") void saveNote(); if (e.key === "Escape") setNoteEdit(null); }}
+                  placeholder="写点备注，比如：交作业 / 带教材 / 会议"
+                />
+                <Button size="sm" onClick={() => void saveNote()}>保存</Button>
+                {noteOfDate(noteEdit.date) ? <Button size="sm" variant="ghost" onClick={() => void clearNote()}>清除</Button> : null}
+                <Button size="sm" variant="secondary" onClick={() => setNoteEdit(null)}>取消</Button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -410,17 +436,6 @@ export function PlanPage() {
                 </div>
               ))}
               {!isPast ? <Button variant="ghost" size="sm" onClick={() => setEditTasks((current) => [...current, { id: newId(), text: "" }])}><Plus size={14} />添加任务</Button> : null}
-            </div>
-
-            <div className="plan-edit-section">
-              <span>备注（会显示在日历上）</span>
-              <input
-                className="plan-edit-remark"
-                value={editRemark}
-                onChange={(e) => setEditRemark(e.target.value)}
-                placeholder="简单备注，如：带教材 / 交作业"
-                disabled={isPast}
-              />
             </div>
 
             {!isPast ? (

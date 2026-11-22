@@ -39,6 +39,14 @@ export const collectionDefinitions = {
     fields: ["week", "slot_id", "task_id", "done"],
     search: [],
   },
+  calendarNotes: {
+    table: "calendar_notes",
+    title: "text",
+    module: "plan",
+    required: ["date"],
+    fields: ["date", "text"],
+    search: [],
+  },
   mediaContents: {
     table: "media_contents",
     title: "title",

@@ -226,8 +226,9 @@ function removePidRecord(pid) {
 
 function maybeOpenBrowser() {
   if (process.env.MUZI_NO_OPEN === "1") return;
-  const { command, args } = browserOpenCommandFor(process.platform, baseUrl);
-  const opener = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
+  const { command, args } = browserOpenCommandFor(process.platform, baseUrl, path.join(dataRoot, "edge-profile"));
+  // windowsHide 必须为 false：否则全新 Edge 实例（独立 profile）的窗口会被隐藏
+  const opener = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: false });
   opener.unref();
 }
 

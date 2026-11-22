@@ -6,6 +6,7 @@ export type WorkspaceState = {
   deskProjects: Entity[];
   planSlots: Entity[];
   planCompletions: Entity[];
+  calendarNotes: Entity[];
   mediaContents: Entity[];
   devProjects: Entity[];
   devMilestones: Entity[];
