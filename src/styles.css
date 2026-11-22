@@ -2049,3 +2049,62 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 /* ——— 自定义背景 ——— */
 .custom-background { position: fixed; inset: 0; z-index: var(--z-ambient); pointer-events: none; overflow: hidden; background-size: cover; background-position: center; background-repeat: no-repeat; }
 .background-control { display: flex; align-items: center; gap: 8px; }
+
+/* ——— 任务计划 ——— */
+.plan-page { display: grid; gap: 16px; }
+.plan-toolbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-glass); background: var(--frosted-bg); -webkit-backdrop-filter: var(--frosted-filter); backdrop-filter: var(--frosted-filter); box-shadow: var(--frosted-sheen); }
+.plan-nav-btn { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-raised); color: var(--text-soft); cursor: pointer; }
+.plan-nav-btn:hover { border-color: var(--accent); color: var(--text); }
+.plan-week-label { display: grid; gap: 1px; }
+.plan-week-label strong { color: var(--text); font-size: 15px; }
+.plan-week-label span { color: var(--text-faint); font-size: 11px; }
+.plan-default-mode { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--text-soft); font-size: 11px; }
+.plan-default-mode select { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); padding: 4px 8px; font: 11px var(--font-ui); }
+.plan-grid { display: grid; grid-template-columns: 64px repeat(7, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: var(--radius-panel); overflow: hidden; background: var(--surface); }
+.plan-corner { background: var(--surface-inset); border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+.plan-day-head { display: grid; place-items: center; gap: 1px; padding: 8px 4px; background: var(--surface-inset); border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+.plan-day-head strong { color: var(--text); font-size: 12px; }
+.plan-day-head small { color: var(--text-faint); font-size: 10px; }
+.plan-row-fragment { display: contents; }
+.plan-row-head { display: grid; place-items: center; padding: 6px 2px; background: var(--surface-inset); border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+.plan-row-head strong { color: var(--text); font-size: 12px; }
+.plan-row-head small { color: var(--text-faint); font-size: 9px; }
+.plan-cell { position: relative; min-height: 92px; padding: 4px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); cursor: pointer; overflow: hidden; }
+.plan-cell:hover { background: var(--accent-soft); }
+.plan-cell.has-content { background: var(--surface-raised); }
+.plan-cell.has-content:hover { background: var(--accent-soft); }
+.plan-cell.is-past { cursor: default; }
+.plan-cell.is-past.has-content { opacity: .78; }
+.plan-cell.is-past:hover { background: transparent; }
+.plan-cell.is-retro { box-shadow: inset 2px 0 0 var(--accent); }
+.plan-cell-body { display: grid; gap: 2px; }
+.plan-task-line { display: flex; align-items: flex-start; gap: 4px; font-size: 10.5px; line-height: 1.35; color: var(--text); cursor: pointer; }
+.plan-task-line input { margin: 1px 0 0; width: 12px; height: 12px; flex: 0 0 12px; accent-color: var(--accent); }
+.plan-task-line span.is-done { text-decoration: line-through; color: var(--text-faint); }
+.plan-cell-remark { margin-top: 3px; font-size: 9.5px; color: var(--text-faint); border-left: 2px solid var(--border-strong); padding-left: 4px; }
+.plan-mode-tag { position: absolute; top: 3px; right: 4px; font-size: 8.5px; color: var(--accent-deep); background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
+.plan-lower { display: grid; gap: 12px; }
+.plan-filter { display: grid; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-glass); background: var(--frosted-bg); -webkit-backdrop-filter: var(--frosted-filter); backdrop-filter: var(--frosted-filter); box-shadow: var(--frosted-sheen); }
+.plan-filter-row { display: flex; align-items: center; gap: 8px; color: var(--text-soft); font-size: 11px; }
+.plan-filter-row select { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); padding: 4px 8px; font: 11px var(--font-ui); }
+.plan-calendar { display: grid; gap: 6px; }
+.plan-calendar-head, .plan-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.plan-calendar-head span { text-align: center; color: var(--text-faint); font-size: 10px; }
+.plan-calendar-empty { min-height: 44px; }
+.plan-calendar-day { display: grid; place-items: center; gap: 1px; min-height: 44px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-raised); color: var(--text-soft); cursor: pointer; font-size: 11px; }
+.plan-calendar-day:hover { border-color: var(--accent); color: var(--text); }
+.plan-calendar-day.is-weekend { background: var(--surface-inset); }
+.plan-calendar-day.is-holiday { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.plan-calendar-num { font-weight: 560; color: var(--text); }
+.plan-calendar-holiday { font-size: 8px; color: var(--accent-deep); }
+.plan-calendar-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+.plan-edit { display: grid; gap: 14px; }
+.plan-edit-readonly { color: var(--text-soft); font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--surface-inset); }
+.plan-edit-mode { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--text-soft); font-size: 11px; }
+.plan-edit-mode select { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); padding: 5px 9px; font: 12px var(--font-ui); }
+.plan-edit-section { display: grid; gap: 8px; color: var(--text-soft); font-size: 11px; }
+.plan-edit-task { display: flex; align-items: center; gap: 6px; }
+.plan-edit-task input { flex: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); padding: 8px 10px; font: 12px var(--font-ui); }
+.plan-edit-remark { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); padding: 8px 10px; font: 12px var(--font-ui); }
+.plan-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 1080px) { .plan-grid { font-size: 9px; } }

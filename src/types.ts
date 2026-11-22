@@ -4,6 +4,8 @@ export type WorkspaceState = {
   planItems: Entity[];
   quickMemos: Entity[];
   deskProjects: Entity[];
+  planSlots: Entity[];
+  planCompletions: Entity[];
   mediaContents: Entity[];
   devProjects: Entity[];
   devMilestones: Entity[];

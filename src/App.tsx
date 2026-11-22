@@ -3,14 +3,9 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AppLayout } from "./components/Layout";
 import { ErrorState, Skeleton } from "./components/ui";
 
-const DashboardPage = lazy(() => import("./pages/DashboardPage").then((module) => ({ default: module.DashboardPage })));
-const TodayPage = lazy(() => import("./pages/TodayPage").then((module) => ({ default: module.TodayPage })));
+const PlanPage = lazy(() => import("./pages/PlanPage").then((module) => ({ default: module.PlanPage })));
 const MediaPage = lazy(() => import("./pages/MediaPage").then((module) => ({ default: module.MediaPage })));
 const DevelopmentPage = lazy(() => import("./pages/DevelopmentPage").then((module) => ({ default: module.DevelopmentPage })));
-const ConsultingPage = lazy(() => import("./pages/ConsultingPage").then((module) => ({ default: module.ConsultingPage })));
-const FitnessPage = lazy(() => import("./pages/FitnessPage").then((module) => ({ default: module.FitnessPage })));
-const DietPage = lazy(() => import("./pages/DietPage").then((module) => ({ default: module.DietPage })));
-const EntertainmentPage = lazy(() => import("./pages/EntertainmentPage").then((module) => ({ default: module.EntertainmentPage })));
 const DeskPage = lazy(() => import("./pages/DeskPage").then((module) => ({ default: module.DeskPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 
@@ -24,14 +19,9 @@ const router = createBrowserRouter([
     element: <AppLayout />,
     errorElement: <div className="route-error"><ErrorState message="页面无法打开，请返回首页后重试。" /></div>,
     children: [
-      { index: true, element: <LazyPage><DashboardPage /></LazyPage> },
-      { path: "today", element: <LazyPage><TodayPage /></LazyPage> },
+      { index: true, element: <LazyPage><PlanPage /></LazyPage> },
       { path: "media", element: <LazyPage><MediaPage /></LazyPage> },
       { path: "development", element: <LazyPage><DevelopmentPage /></LazyPage> },
-      { path: "consulting", element: <LazyPage><ConsultingPage /></LazyPage> },
-      { path: "fitness", element: <LazyPage><FitnessPage /></LazyPage> },
-      { path: "diet", element: <LazyPage><DietPage /></LazyPage> },
-      { path: "entertainment", element: <LazyPage><EntertainmentPage /></LazyPage> },
       { path: "desk", element: <LazyPage><DeskPage /></LazyPage> },
       { path: "settings", element: <LazyPage><SettingsPage /></LazyPage> },
     ],

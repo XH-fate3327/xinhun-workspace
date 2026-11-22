@@ -23,6 +23,22 @@ export const collectionDefinitions = {
     fields: ["name", "blocks"],
     search: ["name"],
   },
+  planSlots: {
+    table: "plan_slots",
+    title: "mode",
+    module: "plan",
+    required: ["day_index", "slot_row", "mode", "start_week", "end_week"],
+    fields: ["day_index", "slot_row", "mode", "start_week", "end_week", "tasks", "remark"],
+    search: [],
+  },
+  planCompletions: {
+    table: "plan_completions",
+    title: "task_id",
+    module: "plan",
+    required: ["week", "slot_id", "task_id"],
+    fields: ["week", "slot_id", "task_id", "done"],
+    search: [],
+  },
   mediaContents: {
     table: "media_contents",
     title: "title",
