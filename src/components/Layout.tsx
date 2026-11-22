@@ -14,7 +14,7 @@ import { AmbientEnvironment, chooseAmbientScene } from "./AmbientEnvironment";
 import { ModuleArtwork, type ModuleArtworkName } from "./ModuleArtwork";
 import type { Entity } from "../types";
 
-const groups = [
+const baseGroups = [
   { label: "日常", links: [
     { to: "/", label: "任务计划", module: "plan", tone: "cyan" },
   ] },
@@ -41,7 +41,7 @@ const routeMeta: Record<string, { label: string; module: ModuleArtworkName; tone
 };
 
 export function AppLayout() {
-  const { data, saveNow, saveStatus } = useWorkspace();
+  const { data, run, saveNow, saveStatus } = useWorkspace();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -53,6 +53,48 @@ export function AppLayout() {
   const theme = data.settings.theme === "dark" ? "dark" : "light";
   const ambientScene = chooseAmbientScene(currentPage.module, theme);
   const customBackground = typeof data.settings.background_image === "string" && data.settings.background_image.startsWith("data:image") ? data.settings.background_image : "";
+
+  // 侧边栏顺序：可拖动排序，结果存 settings.navOrder（分组名 → 路由数组）
+  const navOrder = (data.settings.navOrder as Record<string, string[]> | undefined) ?? {};
+  const groups = baseGroups.map((group) => {
+    const order = navOrder[group.label];
+    if (!order || order.length === 0) return group;
+    const sorted = [...group.links].sort((a, b) => {
+      const ia = order.indexOf(a.to);
+      const ib = order.indexOf(b.to);
+      return (ia === -1 ? Number.MAX_SAFE_INTEGER : ia) - (ib === -1 ? Number.MAX_SAFE_INTEGER : ib);
+    });
+    return { ...group, links: sorted };
+  });
+  const [dragInfo, setDragInfo] = useState<{ group: string; from: number } | null>(null);
+  const [dropAt, setDropAt] = useState<{ group: string; index: number } | null>(null);
+
+  const reorderGroup = async (groupLabel: string, from: number, to: number) => {
+    if (from === to) return;
+    const group = groups.find((g) => g.label === groupLabel);
+    if (!group) return;
+    const links = [...group.links];
+    const [moved] = links.splice(from, 1);
+    links.splice(to, 0, moved);
+    await run(() => api.saveSettings({ navOrder: { ...navOrder, [groupLabel]: links.map((link) => link.to) } }));
+  };
+  const onNavDragStart = (group: string, from: number) => (event: React.DragEvent) => {
+    setDragInfo({ group, from });
+    event.dataTransfer.effectAllowed = "move";
+    try { event.dataTransfer.setData("text/plain", String(from)); } catch { /* ignore */ }
+  };
+  const onNavDragOver = (group: string, index: number) => (event: React.DragEvent) => {
+    if (!dragInfo || dragInfo.group !== group) return;
+    event.preventDefault();
+    setDropAt({ group, index });
+  };
+  const onNavDrop = (group: string, index: number) => (event: React.DragEvent) => {
+    event.preventDefault();
+    if (dragInfo && dragInfo.group === group) void reorderGroup(group, dragInfo.from, index);
+    setDragInfo(null);
+    setDropAt(null);
+  };
+  const onNavDragEnd = () => { setDragInfo(null); setDropAt(null); };
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -136,8 +178,20 @@ export function AppLayout() {
           {groups.map((group) => (
             <div className="nav-group" key={group.label}>
               <span className="nav-label">{group.label}</span>
-              {group.links.map(({ to, label, module, tone }) => (
-                <NavLink key={to} to={to} end={to === "/"} data-tone={tone} className={({ isActive }) => classNames("nav-link", isActive && "active")} title={label}>
+              {group.links.map(({ to, label, module, tone }, index) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={to === "/"}
+                  data-tone={tone}
+                  draggable
+                  onDragStart={onNavDragStart(group.label, index)}
+                  onDragOver={onNavDragOver(group.label, index)}
+                  onDrop={onNavDrop(group.label, index)}
+                  onDragEnd={onNavDragEnd}
+                  className={({ isActive }) => classNames("nav-link", isActive && "active", dragInfo?.group === group.label && dragInfo.from === index && "nav-dragging", dropAt?.group === group.label && dropAt.index === index && "nav-drop-target")}
+                  title={`${label}（拖动可排序）`}
+                >
                   {appearance === "neo" ? <NeoModuleEmblem module={module} /> : <ModuleArtwork module={module} />}<span>{label}</span>
                 </NavLink>
               ))}
