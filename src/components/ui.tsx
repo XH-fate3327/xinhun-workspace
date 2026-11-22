@@ -74,6 +74,8 @@ export function Modal({ title, description, open, onClose, children, wide = fals
   const descriptionId = useId();
   const [drag, setDrag] = useState({ x: 0, y: 0 });
   const dragStart = useRef<{ mx: number; my: number; dx: number; dy: number } | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) return;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -83,7 +85,7 @@ export function Modal({ title, description, open, onClose, children, wide = fals
       first?.focus();
     });
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
       if (event.key !== "Tab" || !modalRef.current) return;
       const focusable = [...modalRef.current.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex='-1'])")];
       if (!focusable.length) return;
@@ -98,7 +100,7 @@ export function Modal({ title, description, open, onClose, children, wide = fals
       document.removeEventListener("keydown", handler);
       previousFocus?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
   // 每次打开时把拖动偏移归零
   useEffect(() => {
     if (open) setDrag({ x: 0, y: 0 });
