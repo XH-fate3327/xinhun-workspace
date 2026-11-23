@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { AppWindow, File, FolderSimple, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
 import { api } from "../api";
 import { useWorkspace } from "../WorkspaceContext";
@@ -220,8 +220,7 @@ export function LauncherPage() {
     }
   };
 
-  const onDropFiles = async (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
+  const onDropFiles = async (event: DragEvent<HTMLDivElement>) => {    event.preventDefault();
     const files = Array.from(event.dataTransfer.files || []);
     const entries = Array.from(event.dataTransfer.items || [])
       .map((item) => {
@@ -302,8 +301,24 @@ export function LauncherPage() {
     setOverIndex(null);
   };
 
+  const dropHandlerRef = useRef(onDropFiles);
+  dropHandlerRef.current = onDropFiles;
+  useEffect(() => {
+    const prevent = (event: globalThis.DragEvent) => { event.preventDefault(); };
+    const handle = (event: globalThis.DragEvent) => {
+      event.preventDefault();
+      void dropHandlerRef.current(event as unknown as DragEvent<HTMLDivElement>);
+    };
+    window.addEventListener("dragover", prevent);
+    window.addEventListener("drop", handle);
+    return () => {
+      window.removeEventListener("dragover", prevent);
+      window.removeEventListener("drop", handle);
+    };
+  }, []);
+
   return (
-    <div className="launcher-page" onDragOver={(event) => event.preventDefault()} onDrop={(event) => void onDropFiles(event)}>
+    <div className="launcher-page">
       <PageHeader
         icon={<ModuleArtwork module="launcher" />}
         eyebrow="工作"
