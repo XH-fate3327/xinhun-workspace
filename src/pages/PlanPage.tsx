@@ -1,4 +1,5 @@
 import { useMemo, useState, type ChangeEvent } from "react";
+import { Link } from "react-router-dom";
 import { CaretLeft, CaretRight, Plus, Trash, X } from "@phosphor-icons/react";
 import { api } from "../api";
 import { useWorkspace } from "../WorkspaceContext";
@@ -155,6 +156,28 @@ export function PlanPage() {
 
   const goWeek = (delta: number) => setWeekKey((key) => addDays(key, delta * 7));
   const weekRange = `${fmtMD(weekKey)} - ${fmtMD(addDays(weekKey, 6))}`;
+
+  // 首页模块摘要（设置里勾选哪些就显示哪些）
+  const dashboardModules = useMemo<string[]>(() => {
+    const value = data.settings.dashboardModules;
+    return Array.isArray(value) ? (value as string[]) : ["plan", "media", "development", "desk"];
+  }, [data.settings.dashboardModules]);
+  const filledThisWeek = useMemo(() => {
+    let count = 0;
+    for (let d = 0; d < 7; d += 1) {
+      for (let r = 0; r < TIME_ROWS.length; r += 1) {
+        const slot = effectiveSlot(slots, weekKey, d, r);
+        if (slot && parseTasks(slot.tasks).length > 0) count += 1;
+      }
+    }
+    return count;
+  }, [slots, weekKey]);
+  const summaryCards = [
+    { value: "plan", label: "任务计划", to: "/", detail: `本周 ${filledThisWeek} 个时间块` },
+    { value: "media", label: "自媒体", to: "/media", detail: `${data.mediaContents.length} 条内容` },
+    { value: "development", label: "开发工作", to: "/development", detail: `${data.devProjects.length} 个项目` },
+    { value: "desk", label: "处理台", to: "/desk", detail: `${data.deskProjects.length} 个项目` },
+  ];
   const jumpWeeks = weeksOfYear(jumpYear);
   const changeJumpYear = (year: number) => {
     setJumpYear(year);
@@ -451,6 +474,21 @@ export function PlanPage() {
           </div>
         </div>
       </div>
+
+      {/* 首页模块摘要：由「数据与设置 → 首页模块摘要」控制显示哪些 */}
+      {summaryCards.some((card) => dashboardModules.includes(card.value)) ? (
+        <div className="plan-summary">
+          <div className="plan-summary-title">模块摘要</div>
+          <div className="plan-summary-grid">
+            {summaryCards.filter((card) => dashboardModules.includes(card.value)).map((card) => (
+              <Link key={card.value} to={card.to} className="plan-summary-card">
+                <strong>{card.label}</strong>
+                <span>{card.detail}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {editing ? (
         <Modal open onClose={() => setEditing(null)} title={`${DAY_NAMES[editing.day]} · ${TIME_ROWS[editing.row].start}-${TIME_ROWS[editing.row].end}`} wide draggable>
