@@ -57,6 +57,7 @@ export const api = {
   setWindowOpacity: (alpha: number) => request<{ alpha: number }>("/api/system/window-opacity", { method: "POST", body: JSON.stringify({ alpha }) }),
   sinkWindow: () => request<{ ok: boolean }>("/api/system/window-bottom", { method: "POST", body: JSON.stringify({}) }),
   dbMaintenance: () => request<{ integrity: string; sizeBytes: number; freedBytes: number }>("/api/system/db-maintenance", { method: "POST", body: JSON.stringify({}) }),
+  runAsAdmin: (path: string) => request<{ started: boolean }>("/api/system/run-as-admin", { method: "POST", body: JSON.stringify({ path }) }),
   getIcon: (path: string) => request<{ icon: string }>(`/api/system/icon?path=${encodeURIComponent(path)}`),
   resolveShortcut: (name: string, base64: string) => request<{ path: string; isDirectory?: boolean }>("/api/system/shortcut-target", { method: "POST", body: JSON.stringify({ name, base64 }) }),
   pickFolder: () => request<{ path: string }>("/api/system/pick-folder", { method: "POST", body: JSON.stringify({}) }),  pickFile: () => request<{ path: string }>("/api/system/pick-file", { method: "POST", body: JSON.stringify({}) }),

@@ -299,6 +299,16 @@ if ($p) {
   // 数据体检：完整性检查 + 空间回收
   app.post("/api/system/db-maintenance", async () => ({ data: store.manager.maintenance() }));
 
+  // 以管理员身份运行（会弹 UAC 确认）
+  app.post("/api/system/run-as-admin", async (request) => {
+    const body = z.object({ path: z.string().min(1) }).parse(request.body ?? {});
+    if (!fs.existsSync(body.path)) throw new ValidationError("这个本地路径不存在");
+    const script = `Start-Process -FilePath '${body.path.replace(/'/g, "''")}' -Verb RunAs`;
+    execFile("powershell", ["-NoProfile", "-Command", script], { windowsHide: true }, () => undefined);
+    sinkWorkbench();
+    return { data: { started: true } };
+  });
+
   // 打开「控制面板」
   app.post("/api/system/open-control-panel", async () => {
     const child = spawn("explorer.exe", ["shell:ControlPanelFolder"], { detached: true, stdio: "ignore" });

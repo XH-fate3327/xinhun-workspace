@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { AppWindow, File, FolderSimple, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
+import { AppWindow, File, FolderSimple, PencilSimple, Plus, ShieldCheck, Trash } from "@phosphor-icons/react";
 import { api } from "../api";
 import { useWorkspace } from "../WorkspaceContext";
 import { classNames } from "../utils";
@@ -121,6 +121,14 @@ export function LauncherPage() {
     bounceTimer.current = window.setTimeout(() => setBouncingId(null), 380);
     try {
       await api.openPath(String(item.path ?? ""));
+    } catch (cause) {
+      setError((cause as Error).message);
+    }
+  };
+
+  const runAsAdmin = async (item: Entity) => {
+    try {
+      await api.runAsAdmin(String(item.path ?? ""));
     } catch (cause) {
       setError((cause as Error).message);
     }
@@ -415,6 +423,7 @@ export function LauncherPage() {
                   <span className="launcher-name">{String(item.name ?? "")}</span>
                 </button>
                 <div className="launcher-tools">
+                  <IconButton label="以管理员身份运行" onClick={() => void runAsAdmin(item)}><ShieldCheck size={14} /></IconButton>
                   <IconButton label="编辑" onClick={() => setDraft({ id: item.id, name: String(item.name ?? ""), path: String(item.path ?? ""), icon: String(item.icon ?? ""), category: String(item.category ?? "") })}><PencilSimple size={14} /></IconButton>
                   <IconButton label="删除" onClick={() => void run(() => api.remove("launcherItems", item.id))}><Trash size={14} /></IconButton>
                 </div>
