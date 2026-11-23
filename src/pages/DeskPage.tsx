@@ -109,6 +109,8 @@ export function DeskPage() {
   const [viewImage, setViewImage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [hoverBlockId, setHoverBlockId] = useState<string | null>(null);
+  const [dropBlockId, setDropBlockId] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const pendingTargetRef = useRef<string | null>(null);
 
@@ -212,8 +214,8 @@ export function DeskPage() {
         if (file) files.push(file);
       }
     }
-    if (files.length) void addImageFiles(files, null);
-  }, [addImageFiles]);
+    if (files.length) void addImageFiles(files, hoverBlockId);
+  }, [addImageFiles, hoverBlockId]);
 
   const onFiles = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const fileList = event.target.files;
@@ -269,7 +271,20 @@ export function DeskPage() {
           ) : (
             <div className="desk-blocks">
               {blocks.map((block, index) => (
-                <div className="desk-card" key={block.id}>
+                <div
+                  className={classNames("desk-card", dropBlockId === block.id && "is-drop-target")}
+                  key={block.id}
+                  onMouseEnter={() => setHoverBlockId(block.id)}
+                  onMouseLeave={() => setHoverBlockId((current) => (current === block.id ? null : current))}
+                  onDragOver={(event) => { event.preventDefault(); setDropBlockId(block.id); }}
+                  onDragLeave={() => setDropBlockId((current) => (current === block.id ? null : current))}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const files = Array.from(event.dataTransfer.files || []).filter((file) => file.type.startsWith("image/"));
+                    if (files.length) void addImageFiles(files, block.id);
+                    setDropBlockId(null);
+                  }}
+                >
                   <div className="desk-card-images">
                     {block.images.map((src, imageIndex) => (
                       <div className="desk-card-image" key={imageIndex}>
