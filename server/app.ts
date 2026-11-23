@@ -475,6 +475,11 @@ public class XinhunBring {
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int c);
   [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+  [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint a, uint b, bool f);
+  [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int w, int hh, uint flags);
 }
 "@
 Start-Sleep -Milliseconds 700
@@ -486,9 +491,17 @@ if ($h -eq [IntPtr]::Zero) {
   if ($w) { $h = $w.MainWindowHandle }
 }
 if ($h -ne [IntPtr]::Zero) {
+  $fg = [XinhunBring]::GetForegroundWindow()
+  $fgPid = [uint32]0
+  $fgThread = [XinhunBring]::GetWindowThreadProcessId($fg, [ref]$fgPid)
+  $cur = [XinhunBring]::GetCurrentThreadId()
+  if ($fgThread -ne 0) { [XinhunBring]::AttachThreadInput($cur, $fgThread, $true) | Out-Null }
   [XinhunBring]::ShowWindow($h, 9) | Out-Null
+  [XinhunBring]::ShowWindow($h, 5) | Out-Null
   [XinhunBring]::BringWindowToTop($h) | Out-Null
+  [XinhunBring]::SetWindowPos($h, [IntPtr]::Zero, 0, 0, 0, 0, 3) | Out-Null
   [XinhunBring]::SetForegroundWindow($h) | Out-Null
+  if ($fgThread -ne 0) { [XinhunBring]::AttachThreadInput($cur, $fgThread, $false) | Out-Null }
 }
 `;
   execFile("powershell", ["-NoProfile", "-Command", script], { windowsHide: true }, () => undefined);
