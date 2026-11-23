@@ -204,17 +204,40 @@ export function DeskPage() {
     if (selectedId === id) setSelectedId(null);
   }, [run, selectedId]);
 
-  const onPaste = useCallback((event: ClipboardEvent<HTMLDivElement>) => {
-    const items = event.clipboardData?.items;
-    if (!items) return;
-    const files: File[] = [];
-    for (const item of Array.from(items)) {
-      if (item.kind === "file" && item.type.startsWith("image/")) {
-        const file = item.getAsFile();
-        if (file) files.push(file);
+  // 拖拽/粘贴统一在 window 上监听：拖到哪个板块、鼠标悬停在哪个板块，就加到哪个板块
+  useEffect(() => {
+    const onDragOver = (event: globalThis.DragEvent) => { event.preventDefault(); };
+    const onDrop = (event: globalThis.DragEvent) => {
+      const files = Array.from(event.dataTransfer?.files ?? []).filter((file) => file.type.startsWith("image/"));
+      if (!files.length) return;
+      event.preventDefault();
+      const card = (event.target as Element | null)?.closest?.("[data-block-id]");
+      const blockId = card?.getAttribute("data-block-id") ?? hoverBlockId;
+      setDropBlockId(null);
+      void addImageFiles(files, blockId ?? null);
+    };
+    const onPaste = (event: globalThis.ClipboardEvent) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+      const files: File[] = [];
+      for (const item of Array.from(items)) {
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) files.push(file);
+        }
       }
-    }
-    if (files.length) void addImageFiles(files, hoverBlockId);
+      if (!files.length) return;
+      event.preventDefault();
+      void addImageFiles(files, hoverBlockId);
+    };
+    window.addEventListener("dragover", onDragOver);
+    window.addEventListener("drop", onDrop);
+    window.addEventListener("paste", onPaste);
+    return () => {
+      window.removeEventListener("dragover", onDragOver);
+      window.removeEventListener("drop", onDrop);
+      window.removeEventListener("paste", onPaste);
+    };
   }, [addImageFiles, hoverBlockId]);
 
   const onFiles = useCallback((event: ChangeEvent<HTMLInputElement>) => {
@@ -229,7 +252,7 @@ export function DeskPage() {
   }, [addImageFiles]);
 
   return (
-    <div className="desk-page" onPaste={onPaste}>
+    <div className="desk-page">
       <PageHeader
         icon={<ModuleArtwork module="desk" />}
         eyebrow="工作台"
@@ -274,16 +297,11 @@ export function DeskPage() {
                 <div
                   className={classNames("desk-card", dropBlockId === block.id && "is-drop-target")}
                   key={block.id}
+                  data-block-id={block.id}
                   onMouseEnter={() => setHoverBlockId(block.id)}
                   onMouseLeave={() => setHoverBlockId((current) => (current === block.id ? null : current))}
-                  onDragOver={(event) => { event.preventDefault(); setDropBlockId(block.id); }}
+                  onDragOver={() => setDropBlockId(block.id)}
                   onDragLeave={() => setDropBlockId((current) => (current === block.id ? null : current))}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const files = Array.from(event.dataTransfer.files || []).filter((file) => file.type.startsWith("image/"));
-                    if (files.length) void addImageFiles(files, block.id);
-                    setDropBlockId(null);
-                  }}
                 >
                   <div className="desk-card-images">
                     {block.images.map((src, imageIndex) => (
