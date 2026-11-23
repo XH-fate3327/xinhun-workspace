@@ -21,7 +21,7 @@ export const collectionDefinitions = {
     module: "desk",
     required: ["name"],
     fields: ["name", "blocks"],
-    search: ["name"],
+    search: ["name", "blocks"],
   },
   planSlots: {
     table: "plan_slots",
