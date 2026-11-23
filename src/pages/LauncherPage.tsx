@@ -111,10 +111,10 @@ export function LauncherPage() {
     setCatOverIndex(null);
   };
 
-  const addItemFromPath = async (name: string, target: string) => {
+  const addItemFromPath = async (name: string, target: string, isDirectory = false) => {
     let icon = "";
-    try { icon = (await api.getIcon(target)).icon; } catch { icon = ""; }
-    const created = await run(() => api.create("launcherItems", { name, path: target, icon, kind: kindOf(target), category: activeCategory === "all" ? "" : activeCategory }));
+    if (!isDirectory) { try { icon = (await api.getIcon(target)).icon; } catch { icon = ""; } }
+    const created = await run(() => api.create("launcherItems", { name, path: target, icon, kind: isDirectory ? "folder" : kindOf(target), category: activeCategory === "all" ? "" : activeCategory }));
     await run(() => api.saveSettings({ launcherOrder: [...order, created.id] }));
   };
 
@@ -168,7 +168,7 @@ export function LauncherPage() {
     try {
       const result = await api.getIcon(target);
       if (result.icon) setDraft((current) => (current ? { ...current, icon: result.icon } : current));
-      else setError("没有取到图标（文件夹或该文件没有关联图标）");
+      else setError(kindOf(target) === "folder" ? "文件夹没有独立图标，会使用默认文件夹图标" : "没有取到图标（该文件可能没有关联图标）");
     } catch (cause) {
       setError((cause as Error).message);
     } finally {
@@ -199,7 +199,7 @@ export function LauncherPage() {
           const base64 = await fileToBase64(file);
           const result = await api.resolveShortcut(file.name, base64);
           if (result.path) {
-            await addItemFromPath(file.name.replace(/\.(lnk|url)$/i, ""), result.path);
+            await addItemFromPath(file.name.replace(/\.(lnk|url)$/i, ""), result.path, Boolean(result.isDirectory));
           } else {
             setError("无法解析这个快捷方式的目标路径");
           }

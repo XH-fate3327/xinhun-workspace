@@ -279,7 +279,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       }
       const script = `(New-Object -ComObject WScript.Shell).CreateShortcut('${temp.replace(/'/g, "''")}').TargetPath`;
       const out = execFileSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], { encoding: "utf8", windowsHide: true, timeout: 8000 });
-      return { data: { path: out.trim() } };
+      const target = out.trim();
+      let isDirectory = false;
+      try { isDirectory = Boolean(target) && fs.statSync(target).isDirectory(); } catch { isDirectory = false; }
+      return { data: { path: target, isDirectory } };
     } catch {
       return { data: { path: "" } };
     } finally {
