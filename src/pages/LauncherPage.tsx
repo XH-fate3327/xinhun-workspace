@@ -49,6 +49,31 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
+// 短促清脆的启动音（Web Audio 合成，无需音频文件）
+function playLaunchClick(): void {
+  try {
+    const AudioCtor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtor) return;
+    const context = new AudioCtor();
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    const now = context.currentTime;
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(1500, now);
+    osc.frequency.exponentialRampToValueAtTime(820, now + 0.055);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.16, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
+    osc.connect(gain);
+    gain.connect(context.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+    osc.onended = () => { void context.close().catch(() => undefined); };
+  } catch {
+    // 无声环境忽略
+  }
+}
+
 export function LauncherPage() {
   const { data, run } = useWorkspace();
   const moduleLabel = useModuleLabel("启动台");
@@ -81,6 +106,8 @@ export function LauncherPage() {
   const [error, setError] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [bouncingId, setBouncingId] = useState<string | null>(null);
+  const bounceTimer = useRef<number | null>(null);
   const [catDragIndex, setCatDragIndex] = useState<number | null>(null);
   const [catOverIndex, setCatOverIndex] = useState<number | null>(null);
   const [categoryMenu, setCategoryMenu] = useState<{ id: string; name: string } | null>(null);
@@ -88,6 +115,10 @@ export function LauncherPage() {
   const iconInput = useRef<HTMLInputElement>(null);
 
   const openItem = async (item: Entity) => {
+    playLaunchClick();
+    setBouncingId(item.id);
+    if (bounceTimer.current) window.clearTimeout(bounceTimer.current);
+    bounceTimer.current = window.setTimeout(() => setBouncingId(null), 380);
     try {
       await api.openPath(String(item.path ?? ""));
     } catch (cause) {
@@ -370,7 +401,7 @@ export function LauncherPage() {
             return (
               <div
                 key={item.id}
-                className={classNames("launcher-item", dragIndex === index && "is-dragging", overIndex === index && dragIndex !== null && dragIndex !== index && "is-over")}
+                className={classNames("launcher-item", bouncingId === item.id && "is-bouncing", dragIndex === index && "is-dragging", overIndex === index && dragIndex !== null && dragIndex !== index && "is-over")}
                 draggable
                 onDragStart={() => setDragIndex(index)}
                 onDragOver={(event) => { event.preventDefault(); setOverIndex(index); }}
