@@ -8,7 +8,7 @@ import { ModuleArtwork } from "../components/ModuleArtwork";
 import { useModuleLabel } from "../useModuleLabel";
 
 // 一个块 = 左侧图片区（最多 4 张）+ 右侧文字
-type DeskBlock = { id: string; images: string[]; text: string };
+type DeskBlock = { id: string; images: string[]; text: string; tags?: string[] };
 
 const MAX_IMAGE_EDGE = 1000;
 const MAX_IMAGES = 4;
@@ -94,7 +94,7 @@ function parseBlocks(raw: unknown): DeskBlock[] {
     for (const block of parsed) {
       // 新格式（图片数组 + 文字）
       if (Array.isArray(block?.images) && typeof block?.text === "string") {
-        result.push({ id: String(block.id ?? newId()), images: block.images.map(String), text: block.text });
+        result.push({ id: String(block.id ?? newId()), images: block.images.map(String), text: block.text, tags: Array.isArray(block.tags) ? block.tags.map(String) : [] });
         continue;
       }
       // 旧格式：单图块
@@ -221,6 +221,16 @@ export function DeskPage() {
 
   const updateText = useCallback((id: string, text: string) => {
     setBlocks((current) => current.map((block) => (block.id === id ? { ...block, text } : block)));
+  }, []);
+
+  const addTag = useCallback((id: string, tag: string) => {
+    const value = tag.trim();
+    if (!value) return;
+    setBlocks((current) => current.map((block) => (block.id === id ? { ...block, tags: Array.from(new Set([...(block.tags ?? []), value])) } : block)));
+  }, []);
+
+  const removeTag = useCallback((id: string, tag: string) => {
+    setBlocks((current) => current.map((block) => (block.id === id ? { ...block, tags: (block.tags ?? []).filter((item) => item !== tag) } : block)));
   }, []);
 
   const removeImage = useCallback((blockId: string, imageIndex: number) => {
@@ -378,6 +388,23 @@ export function DeskPage() {
                     <IconButton label="上移" onClick={() => moveBlock(index, -1)} disabled={index === 0}><ArrowUp size={14} /></IconButton>
                     <IconButton label="下移" onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1}><ArrowDown size={14} /></IconButton>
                     <IconButton label="删除" onClick={() => deleteBlock(block.id)}><Trash size={14} /></IconButton>
+                  </div>
+                  <div className="desk-card-tags">
+                    {(block.tags ?? []).map((tag) => (
+                      <button key={tag} className="desk-tag" title="点击移除标签" onClick={() => removeTag(block.id, tag)}>{tag} ×</button>
+                    ))}
+                    <input
+                      className="desk-tag-input"
+                      placeholder="+ 标签"
+                      aria-label="添加标签"
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addTag(block.id, event.currentTarget.value);
+                          event.currentTarget.value = "";
+                        }
+                      }}
+                    />
                   </div>
                 </div>
               ))}

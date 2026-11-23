@@ -639,6 +639,11 @@ body { zoom: var(--ui-scale, 1); }
 .desk-card-preview code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: var(--surface-inset); padding: 1px 4px; border-radius: 4px; }
 .desk-card-preview pre code { background: transparent; padding: 0; }
 .desk-card-preview a { color: var(--accent); }
+/* 记录台标签 */
+.desk-card-tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.desk-tag { border: 1px solid var(--border); background: var(--surface-inset); color: var(--text-soft); border-radius: 999px; padding: 2px 9px; font-size: 11px; cursor: pointer; }
+.desk-tag:hover { border-color: var(--accent); color: var(--accent); }
+.desk-tag-input { width: 80px; border: 0; background: transparent; color: var(--text); font-size: 11px; outline: none; }
 .nav-link.active {
   color: var(--accent-deep);
   font-weight: 600;
