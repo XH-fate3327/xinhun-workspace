@@ -296,6 +296,9 @@ if ($p) {
     return { data: { ok: true } };
   });
 
+  // 数据体检：完整性检查 + 空间回收
+  app.post("/api/system/db-maintenance", async () => ({ data: store.manager.maintenance() }));
+
   // 打开「控制面板」
   app.post("/api/system/open-control-panel", async () => {
     const child = spawn("explorer.exe", ["shell:ControlPanelFolder"], { detached: true, stdio: "ignore" });

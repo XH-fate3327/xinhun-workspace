@@ -24,6 +24,8 @@ export class DatabaseManager {
     this.database.pragma("journal_mode = WAL");
     this.database.pragma("synchronous = FULL");
     this.migrate();
+    // 每次启动让 SQLite 自行优化一次（统计信息/索引建议），开销很小
+    try { this.database.pragma("optimize"); } catch { /* ignore */ }
   }
 
   close(): void {
@@ -36,6 +38,25 @@ export class DatabaseManager {
   reopen(): void {
     this.close();
     this.open();
+  }
+
+  /** 数据体检：完整性检查 + optimize + VACUUM 回收空间 */
+  maintenance(): { integrity: string; sizeBytes: number; freedBytes: number } {
+    try { this.database.pragma("optimize"); } catch { /* ignore */ }
+    const before = this.fileSize();
+    const row = this.database.prepare("PRAGMA integrity_check").get() as { integrity_check?: string } | undefined;
+    try { this.database.exec("VACUUM"); } catch { /* ignore */ }
+    try { this.database.pragma("wal_checkpoint(TRUNCATE)"); } catch { /* ignore */ }
+    const after = this.fileSize();
+    return {
+      integrity: String(row?.integrity_check ?? "unknown"),
+      sizeBytes: after,
+      freedBytes: Math.max(0, before - after),
+    };
+  }
+
+  private fileSize(): number {
+    try { return fs.statSync(this.paths.dataFile).size; } catch { return 0; }
   }
 
   migrate(): void {

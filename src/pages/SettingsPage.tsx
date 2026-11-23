@@ -20,6 +20,7 @@ export function SettingsPage() {
   const autostart = useQuery({ queryKey: ["autostart"], queryFn: api.getAutostart });
   const [autostartBusy, setAutostartBusy] = useState(false);
   const [busy, setBusy] = useState("");
+  const [dbCheck, setDbCheck] = useState("");
   const [restoreId, setRestoreId] = useState<string | null>(null);
   const [permanent, setPermanent] = useState<{ collection: CollectionName; id: string; title: string } | null>(null);
   const [emptyTrashOpen, setEmptyTrashOpen] = useState(false);
@@ -35,6 +36,20 @@ export function SettingsPage() {
     }
   };
   const createBackup = async () => { setBusy("backup"); try { await run(() => api.createBackup("手动备份", false)); } finally { setBusy(""); } };
+  const checkDatabase = async () => {
+    setBusy("db");
+    setDbCheck("");
+    try {
+      const result = await api.dbMaintenance();
+      setDbCheck(result.integrity === "ok"
+        ? `完整性正常 · 当前 ${formatBytes(result.sizeBytes)}${result.freedBytes > 0 ? ` · 回收 ${formatBytes(result.freedBytes)}` : ""}`
+        : `完整性检查异常：${result.integrity}`);
+    } catch (cause) {
+      setDbCheck(`体检失败：${(cause as Error).message}`);
+    } finally {
+      setBusy("");
+    }
+  };
   const exportAll = async () => { setBusy("export"); try { const result = await run(api.exportAll); window.location.href = result.downloadUrl; } finally { setBusy(""); } };
   if (system.isLoading || backups.isLoading || autostart.isLoading) return <><PageHeader icon={<ModuleArtwork module="settings" />} eyebrow="系统" title={moduleLabel} description="检查本地数据和备份状态" /><Skeleton lines={8} /></>;
   if (system.error || backups.error) return <ErrorState message={((system.error || backups.error) as Error).message} onRetry={() => { void system.refetch(); void backups.refetch(); }} />;
@@ -70,8 +85,9 @@ export function SettingsPage() {
   return (
     <div>
       <PageHeader icon={<ModuleArtwork module="settings" />} eyebrow="本机数据控制" title={moduleLabel} description="查看数据文件、创建备份、恢复历史版本并调整使用偏好。" />
-      <Section title="数据文件" description="业务数据保存在浏览器之外的独立 SQLite 文件中" action={<Button variant="secondary" onClick={() => void api.openDataDirectory()}><FolderOpen size={16} />打开数据目录</Button>}>
+      <Section title="数据文件" description="业务数据保存在浏览器之外的独立 SQLite 文件中" action={<><Button variant="secondary" loading={busy === "db"} onClick={() => void checkDatabase()}><Database size={16} />数据体检</Button><Button variant="secondary" onClick={() => void api.openDataDirectory()}><FolderOpen size={16} />打开数据目录</Button></>}>
         <div className="data-file-panel"><div className="file-icon"><Database size={27} /></div><div className="file-copy"><strong>app.sqlite</strong><code>{status.dataFile.path}</code><div><span>{formatBytes(status.dataFile.size)}</span><span>修改于 {formatDateTime(status.dataFile.modifiedAt)}</span><Badge tone={status.dataFile.writable ? "success" : "warning"}><Check size={12} />{status.dataFile.writable ? "可读写" : "只读"}</Badge></div></div></div>
+        {dbCheck ? <p className="quiet-line" role="status">{dbCheck}</p> : null}
       </Section>
       <div className="settings-grid">
         <Section title="备份与恢复" description="每天自动备份一次，普通自动备份保留最近30份" action={<Button loading={busy === "backup"} onClick={() => void createBackup()}><ShieldCheck size={16} />立即备份</Button>}>
