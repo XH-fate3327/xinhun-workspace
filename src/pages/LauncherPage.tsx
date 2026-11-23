@@ -387,7 +387,18 @@ export function LauncherPage() {
             tabIndex={0}
             onDragStart={() => { catDraggedRef.current = true; setCatDragIndex(index); }}
             onDragOver={(event) => { event.preventDefault(); setCatOverIndex(index); }}
-            onDrop={(event) => void onCategoryReorder(index)(event)}
+            onDrop={(event) => {
+              const itemId = event.dataTransfer.getData("text/xinhun-item");
+              if (itemId && itemId !== category.id) {
+                event.preventDefault();
+                event.stopPropagation();
+                void run(() => api.update("launcherItems", itemId, { category: category.id }));
+                setCatDragIndex(null);
+                setCatOverIndex(null);
+                return;
+              }
+              void onCategoryReorder(index)(event);
+            }}
             onDragEnd={() => { setCatDragIndex(null); setCatOverIndex(null); window.setTimeout(() => { catDraggedRef.current = false; }, 50); }}
             onClick={() => { if (catDraggedRef.current) { catDraggedRef.current = false; return; } setActiveCategory(category.id); }}
             onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setActiveCategory(category.id); }}
@@ -411,7 +422,7 @@ export function LauncherPage() {
                 key={item.id}
                 className={classNames("launcher-item", bouncingId === item.id && "is-bouncing", dragIndex === index && "is-dragging", overIndex === index && dragIndex !== null && dragIndex !== index && "is-over")}
                 draggable
-                onDragStart={() => setDragIndex(index)}
+                onDragStart={(event) => { setDragIndex(index); event.dataTransfer.setData("text/xinhun-item", item.id); event.dataTransfer.effectAllowed = "move"; }}
                 onDragOver={(event) => { event.preventDefault(); setOverIndex(index); }}
                 onDrop={(event) => void onReorder(index)(event)}
                 onDragEnd={() => { setDragIndex(null); setOverIndex(null); }}
