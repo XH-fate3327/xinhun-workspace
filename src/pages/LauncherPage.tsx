@@ -241,9 +241,10 @@ export function LauncherPage() {
       {error ? <div className="field-error">{error}</div> : null}
 
       <div className="launcher-categories">
-        <button className={classNames("launcher-category", activeCategory === "all" && "active")} onClick={() => setActiveCategory("all")}>
-          <strong>全部</strong><small>{items.length}</small>
-        </button>
+        <div className={classNames("launcher-category", activeCategory === "all" && "active")}>
+          <button className="launcher-category-main" onClick={() => setActiveCategory("all")}><strong>全部</strong></button>
+          <small className="launcher-category-count">{items.length}</small>
+        </div>
         {categories.map((category, index) => (
           <div
             key={category.id}
@@ -256,9 +257,8 @@ export function LauncherPage() {
             onContextMenu={(event) => { event.preventDefault(); setCategoryMenu({ id: category.id, name: category.name }); }}
             title={`${category.name}（右键修改/删除，拖动调整顺序）`}
           >
-            <button className="launcher-category-main" onClick={() => setActiveCategory(category.id)}>
-              <strong>{category.name}</strong><small>{items.filter((item) => String(item.category ?? "") === category.id).length}</small>
-            </button>
+            <button className="launcher-category-main" onClick={() => setActiveCategory(category.id)}><strong>{category.name}</strong></button>
+            <small className="launcher-category-count">{items.filter((item) => String(item.category ?? "") === category.id).length}</small>
           </div>
         ))}
         <button className="launcher-category launcher-category-add" onClick={() => setCategoryDraft({ name: "" })}><Plus size={15} />新建分类夹</button>
@@ -267,7 +267,7 @@ export function LauncherPage() {
       {visible.length === 0 ? (
         <EmptyState title="这里还没有快捷方式" description="点右上角「添加快捷方式」，或把桌面的 .lnk 快捷方式直接拖进来。" />
       ) : (
-        <div className="launcher-grid">
+        <div className="launcher-grid" key={activeCategory}>
           {visible.map((item, index) => {
             const kind = String(item.kind ?? kindOf(String(item.path ?? "")));
             return (
