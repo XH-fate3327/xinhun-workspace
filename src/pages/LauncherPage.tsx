@@ -377,7 +377,7 @@ export function LauncherPage() {
                 onDrop={(event) => void onReorder(index)(event)}
                 onDragEnd={() => { setDragIndex(null); setOverIndex(null); }}
               >
-                <button className="launcher-open" onClick={() => void openItem(item)} title={String(item.path ?? "")}>
+                <button className="launcher-open" onDoubleClick={() => void openItem(item)} title={`${String(item.name ?? "")}（双击打开）\n${String(item.path ?? "")}`}>
                   <span className="launcher-icon">
                     {item.icon ? <img src={String(item.icon)} alt="" draggable={false} /> : kind === "folder" ? <FolderSimple size={34} /> : kind === "exe" ? <AppWindow size={34} /> : <File size={34} />}
                   </span>
