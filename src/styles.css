@@ -620,6 +620,15 @@ body.transparent-background .app-shell > .ambient-environment, body.transparent-
 .alpha-slider { display: flex; align-items: center; gap: 10px; }
 .alpha-slider input { width: 150px; accent-color: var(--accent); }
 .alpha-slider span { font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+/* 强调色与界面缩放 */
+.app-shell[data-accent="violet"] { --accent: #8b7cf6; --accent-soft: rgba(139, 124, 246, .18); }
+.app-shell[data-accent="emerald"] { --accent: #10b981; --accent-soft: rgba(16, 185, 129, .18); }
+.app-shell[data-accent="amber"] { --accent: #f59e0b; --accent-soft: rgba(245, 158, 11, .18); }
+.app-shell[data-accent="rose"] { --accent: #f43f5e; --accent-soft: rgba(244, 63, 94, .18); }
+.accent-swatches { display: flex; gap: 8px; }
+.accent-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.accent-swatch.active { border-color: var(--text); }
+body { zoom: var(--ui-scale, 1); }
 .nav-link.active {
   color: var(--accent-deep);
   font-weight: 600;

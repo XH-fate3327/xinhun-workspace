@@ -56,6 +56,11 @@ export function AppLayout() {
   const transparentAlpha = typeof data.settings.transparentAlpha === "number" ? Math.min(255, Math.max(170, data.settings.transparentAlpha)) : 215;
   const backgroundUrl = transparentBackground ? "" : customBackground;
   useEffect(() => {
+    const scale = typeof data.settings.uiScale === "number" ? Math.min(1.2, Math.max(0.8, data.settings.uiScale)) : 1;
+    document.documentElement.style.setProperty("--ui-scale", String(scale));
+  }, [data.settings.uiScale]);
+
+  useEffect(() => {
     document.body.classList.toggle("transparent-background", transparentBackground);
     const timer = window.setTimeout(() => {
       void api.setWindowOpacity(transparentBackground ? transparentAlpha : 255).catch(() => undefined);
@@ -195,6 +200,7 @@ export function AppLayout() {
     <div
       className={classNames("app-shell", appearance === "neo" && "neo-shell", collapsed && "sidebar-collapsed")}
       data-appearance={appearance}
+      data-accent={String(data.settings.accentColor ?? "cyan")}
       data-module={currentPage.module}
       data-ambient={ambientScene}
     >
