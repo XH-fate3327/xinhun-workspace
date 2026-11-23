@@ -237,6 +237,26 @@ async function maybeOpenBrowser() {
   // windowsHide 必须为 false：否则全新 Edge 实例（独立 profile）的窗口会被隐藏
   const opener = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: false });
   opener.unref();
+  // 先按设置的尺寸打开，稍后再最大化：这样点“还原”时窗口回到设置的尺寸
+  if (fullscreen) maximizeSoon();
+}
+
+function maximizeSoon() {
+  const script = `
+Start-Sleep -Milliseconds 2500
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class XMax2 {
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int c);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+}
+"@
+$p = Get-Process | Where-Object { $_.MainWindowTitle -eq '心魂工作台' } | Select-Object -First 1
+if ($p) { [XMax2]::ShowWindow($p.MainWindowHandle, 3) | Out-Null; [XMax2]::SetForegroundWindow($p.MainWindowHandle) | Out-Null }
+`;
+  const helper = spawn("powershell", ["-NoProfile", "-Command", script], { detached: true, stdio: "ignore", windowsHide: true });
+  helper.unref();
 }
 
 async function acquireLaunchLock() {
