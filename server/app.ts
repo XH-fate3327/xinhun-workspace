@@ -239,6 +239,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.post("/api/system/open-explorer", async () => {
     const child = spawn("explorer.exe", ["shell:MyComputerFolder"], { detached: true, stdio: "ignore" });
     child.unref();
+    sinkWorkbench();
     bringToFront(child.pid ?? 0, "此电脑");
     return { data: { opened: true } };
   });
@@ -289,10 +290,17 @@ if ($p) {
     return { data: { alpha: body.alpha } };
   });
 
+  // 把工作台压到最底层（失去焦点时调用，让它始终在其他软件后面）
+  app.post("/api/system/window-bottom", async () => {
+    sinkWorkbench();
+    return { data: { ok: true } };
+  });
+
   // 打开「控制面板」
   app.post("/api/system/open-control-panel", async () => {
     const child = spawn("explorer.exe", ["shell:ControlPanelFolder"], { detached: true, stdio: "ignore" });
     child.unref();
+    sinkWorkbench();
     bringToFront(child.pid ?? 0, "控制面板");
     return { data: { opened: true } };
   });
@@ -523,11 +531,28 @@ function openPath(target: string): void {
   // 不能带 windowsHide，否则 explorer 打开的文件夹窗口也会被隐藏
   const child = spawn(command, args, { detached: true, stdio: "ignore" });
   child.unref();
+  sinkWorkbench();
   bringToFront(child.pid ?? 0, path.basename(target));
 }
 
-function bringToFront(pid: number, titleHint: string): void {
-  const safeTitle = String(titleHint).replace(/'/g, "''");
+// 把工作台压到 Z 序最底层：这样任何新启动的软件窗口都在它前面
+function sinkWorkbench(): void {
+  const script = `
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class XSink {
+  [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int w, int hh, uint flags);
+}
+"@
+Start-Sleep -Milliseconds 500
+$p = Get-Process | Where-Object { $_.MainWindowTitle -eq '心魂工作台' } | Select-Object -First 1
+if ($p) { [XSink]::SetWindowPos($p.MainWindowHandle, [IntPtr]::new(1), 0, 0, 0, 0, 3) | Out-Null }
+`;
+  execFile("powershell", ["-NoProfile", "-Command", script], { windowsHide: true }, () => undefined);
+}
+
+function bringToFront(pid: number, titleHint: string): void {  const safeTitle = String(titleHint).replace(/'/g, "''");
   const script = `
 Add-Type @"
 using System;
