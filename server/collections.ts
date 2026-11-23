@@ -55,6 +55,14 @@ export const collectionDefinitions = {
     fields: ["title", "platform", "content_format", "stage", "planned_publish_at", "published_at", "copy_text", "asset_path", "publish_url", "views", "likes", "comments", "archived_at"],
     search: ["title", "platform", "copy_text"],
   },
+  launcherItems: {
+    table: "launcher_items",
+    title: "name",
+    module: "launcher",
+    required: ["name", "path"],
+    fields: ["name", "path", "icon", "kind"],
+    search: ["name", "path"],
+  },
   clients: {
     table: "clients",
     title: "name",

@@ -6,6 +6,7 @@ export const moduleArtworkSources = {
   plan: "/assets/module-icons/today-v1.webp",
   media: "/assets/module-icons/media-v1.webp",
   desk: "/assets/module-icons/media-v1.webp",
+  launcher: "/assets/module-icons/dashboard-v1.webp",
   consulting: "/assets/module-icons/consulting-v1.webp",
   fitness: "/assets/module-icons/fitness-v1.webp",
   diet: "/assets/module-icons/diet-v1.webp",

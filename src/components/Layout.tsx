@@ -21,19 +21,21 @@ const baseGroups = [
   { label: "工作", links: [
     { to: "/media", label: "自媒体", module: "media", tone: "coral" },
     { to: "/desk", label: "处理台", module: "desk", tone: "cyan" },
+    { to: "/launcher", label: "启动台", module: "launcher", tone: "teal" },
   ] },
   { label: "系统", links: [{ to: "/settings", label: "数据与设置", module: "settings", tone: "graphite" }] },
 ] satisfies Array<{ label: string; links: Array<{ to: string; label: string; module: ModuleArtworkName; tone: string }> }>;
 
 const collectionRoutes: Record<string, string> = {
-  mediaContents: "/media", quickMemos: "/", deskProjects: "/desk", planSlots: "/",
+  mediaContents: "/media", launcherItems: "/launcher", quickMemos: "/", deskProjects: "/desk", planSlots: "/",
 };
 
 const routeMeta: Record<string, { label: string; module: ModuleArtworkName; tone: string; index: string }> = {
   "/": { label: "任务计划", module: "plan", tone: "cyan", index: "00" },
   "/media": { label: "自媒体", module: "media", tone: "coral", index: "01" },
   "/desk": { label: "处理台", module: "desk", tone: "cyan", index: "02" },
-  "/settings": { label: "数据与设置", module: "settings", tone: "graphite", index: "03" },
+  "/launcher": { label: "启动台", module: "launcher", tone: "teal", index: "03" },
+  "/settings": { label: "数据与设置", module: "settings", tone: "graphite", index: "04" },
 };
 
 export function AppLayout() {
@@ -223,7 +225,7 @@ export function AppLayout() {
             <IconButton label={collapsed ? "展开导航" : "收起导航"} onClick={() => setCollapsed((value) => !value)}><SidebarSimple size={20} /></IconButton>
             <span className="toolbar-page-icon" data-tone={currentPage.tone} aria-hidden="true"><ModuleArtwork module={currentPage.module} /></span>
             <div className="toolbar-context"><strong>{navLabels[location.pathname] ?? currentPage.label}</strong><span>{new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date())}</span></div>
-            {appearance === "neo" ? <span className="topbar-index">{currentPage.index} / 03</span> : null}
+            {appearance === "neo" ? <span className="topbar-index">{currentPage.index} / 04</span> : null}
           </div>
           <div className="topbar-actions">
             <button className="search-trigger glass-clear" aria-label="搜索所有内容" title="搜索所有内容" onClick={() => setSearchOpen(true)}><MagnifyingGlass size={18} /><span>搜索所有内容</span><kbd><Command size={12} />K</kbd></button>

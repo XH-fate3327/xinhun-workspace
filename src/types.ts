@@ -8,6 +8,7 @@ export type WorkspaceState = {
   planCompletions: Entity[];
   calendarNotes: Entity[];
   mediaContents: Entity[];
+  launcherItems: Entity[];
   clients: Entity[];
   consultingProjects: Entity[];
   consultingInteractions: Entity[];

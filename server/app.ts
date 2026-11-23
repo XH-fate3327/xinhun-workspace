@@ -234,6 +234,29 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     return { data: { opened: true } };
   });
 
+  // 从本地 exe / 文件提取关联图标（启动台默认图标用）
+  app.get("/api/system/icon", async (request) => {
+    const query = request.query as { path?: string };
+    const target = String(query.path ?? "").trim();
+    if (!target || process.platform !== "win32" || !fs.existsSync(target)) return { data: { icon: "" } };
+    try {
+      const escaped = path.resolve(target).replace(/'/g, "''");
+      const script = [
+        "Add-Type -AssemblyName System.Drawing;",
+        `$p = '${escaped}';`,
+        "if (Test-Path -LiteralPath $p) {",
+        "  $i = [System.Drawing.Icon]::ExtractAssociatedIcon($p);",
+        "  if ($i) { $b = $i.ToBitmap(); $ms = New-Object System.IO.MemoryStream; $b.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png); [Convert]::ToBase64String($ms.ToArray()) }",
+        "}",
+      ].join(" ");
+      const out = execFileSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], { encoding: "utf8", windowsHide: true, timeout: 8000 });
+      const base64 = out.trim();
+      return { data: { icon: base64 ? `data:image/png;base64,${base64}` : "" } };
+    } catch {
+      return { data: { icon: "" } };
+    }
+  });
+
   app.get("/api/system/autostart", async () => ({ data: readAutostart(paths.root) }));
   app.put("/api/system/autostart", async (request) => {
     const body = z.object({ enabled: z.boolean() }).parse(request.body ?? {});

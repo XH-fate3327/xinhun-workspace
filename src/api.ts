@@ -51,6 +51,7 @@ export const api = {
   saveAndExit: () => request<{ savedAt: string; database: string; dataFile: string; exiting: boolean }>("/api/system/save-and-exit", { method: "POST" }),
   openDataDirectory: () => request<Record<string, any>>("/api/system/open-data-directory", { method: "POST" }),
   openPath: (path: string) => request<Record<string, any>>("/api/system/open-path", { method: "POST", body: JSON.stringify({ path }) }),
+  getIcon: (path: string) => request<{ icon: string }>(`/api/system/icon?path=${encodeURIComponent(path)}`),
   backups: () => request<BackupRecord[]>("/api/backups"),
   createBackup: (label = "", keep = false) => request<BackupRecord>("/api/backups", { method: "POST", body: JSON.stringify({ label, keep }) }),
   updateBackup: (id: string, input: { label?: string; keep?: boolean }) => request<BackupRecord>(`/api/backups/${id}/metadata`, { method: "PATCH", body: JSON.stringify(input) }),
