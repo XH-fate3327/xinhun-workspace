@@ -243,6 +243,21 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     return { data: { opened: true } };
   });
 
+  // 打开「控制面板」
+  app.post("/api/system/open-control-panel", async () => {
+    const child = spawn("explorer.exe", ["shell:ControlPanelFolder"], { detached: true, stdio: "ignore" });
+    child.unref();
+    bringToFront(child.pid ?? 0, "控制面板");
+    return { data: { opened: true } };
+  });
+
+  // 关机（10 秒倒计时，可 shutdown /a 取消）
+  app.post("/api/system/shutdown", async () => {
+    const child = spawn("shutdown.exe", ["/s", "/t", "10"], { detached: true, stdio: "ignore" });
+    child.unref();
+    return { data: { scheduled: true } };
+  });
+
   // 从本地 exe / 文件提取关联图标（启动台默认图标用）
   app.get("/api/system/icon", async (request) => {
     const query = request.query as { path?: string };

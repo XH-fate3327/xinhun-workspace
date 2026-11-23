@@ -52,6 +52,8 @@ export const api = {
   openDataDirectory: () => request<Record<string, any>>("/api/system/open-data-directory", { method: "POST" }),
   openPath: (path: string) => request<Record<string, any>>("/api/system/open-path", { method: "POST", body: JSON.stringify({ path }) }),
   openExplorer: () => request<Record<string, any>>("/api/system/open-explorer", { method: "POST", body: JSON.stringify({}) }),
+  openControlPanel: () => request<Record<string, any>>("/api/system/open-control-panel", { method: "POST", body: JSON.stringify({}) }),
+  shutdown: () => request<Record<string, any>>("/api/system/shutdown", { method: "POST", body: JSON.stringify({}) }),
   getIcon: (path: string) => request<{ icon: string }>(`/api/system/icon?path=${encodeURIComponent(path)}`),
   resolveShortcut: (name: string, base64: string) => request<{ path: string; isDirectory?: boolean }>("/api/system/shortcut-target", { method: "POST", body: JSON.stringify({ name, base64 }) }),
   pickFolder: () => request<{ path: string }>("/api/system/pick-folder", { method: "POST", body: JSON.stringify({}) }),  pickFile: () => request<{ path: string }>("/api/system/pick-file", { method: "POST", body: JSON.stringify({}) }),

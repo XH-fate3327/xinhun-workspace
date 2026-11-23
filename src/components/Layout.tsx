@@ -3,13 +3,13 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   MagnifyingGlass, Plus, FloppyDisk, CheckCircle, WarningCircle, SidebarSimple,
-  ArrowRight, Command, Power, House,
+  ArrowRight, Command, Power, House, DownloadSimple, ImageSquare, MusicNotes, Gear,
 } from "@phosphor-icons/react";
 import { api } from "../api";
 import { useWorkspace } from "../WorkspaceContext";
 import { formatDateTime, classNames } from "../utils";
 import { normalizeAppearance } from "../appearance";
-import { Button, IconButton, Modal, Skeleton, ErrorState, Badge } from "./ui";
+import { Button, IconButton, Modal, Skeleton, ErrorState, Badge, ConfirmDialog } from "./ui";
 import { AmbientEnvironment, chooseAmbientScene } from "./AmbientEnvironment";
 import { ModuleArtwork, type ModuleArtworkName } from "./ModuleArtwork";
 import type { Entity } from "../types";
@@ -43,6 +43,7 @@ export function AppLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [shutdownOpen, setShutdownOpen] = useState(false);
   const [exitState, setExitState] = useState<"idle" | "saving" | "done" | "error">("idle");
   const system = useQuery({ queryKey: ["system"], queryFn: api.systemStatus, staleTime: 30_000 });
   const currentPage = routeMeta[location.pathname] ?? routeMeta["/"];
@@ -228,7 +229,14 @@ export function AppLayout() {
             {appearance === "neo" ? <span className="topbar-index">{currentPage.index} / 04</span> : null}
           </div>
           <div className="topbar-actions">
-            <IconButton label="打开资源管理器" onClick={() => void api.openExplorer().catch(() => undefined)}><House size={20} /></IconButton>
+            <span className="topbar-quick">
+              <IconButton label="打开资源管理器" onClick={() => void api.openExplorer().catch(() => undefined)}><House size={19} /></IconButton>
+              <IconButton label="下载（D:\下载）" onClick={() => void api.openPath("D:\\下载").catch(() => undefined)}><DownloadSimple size={19} /></IconButton>
+              <IconButton label="图片（D:\下载\图片）" onClick={() => void api.openPath("D:\\下载\\图片").catch(() => undefined)}><ImageSquare size={19} /></IconButton>
+              <IconButton label="音乐（D:\下载\音乐）" onClick={() => void api.openPath("D:\\下载\\音乐").catch(() => undefined)}><MusicNotes size={19} /></IconButton>
+              <IconButton label="控制面板" onClick={() => void api.openControlPanel().catch(() => undefined)}><Gear size={19} /></IconButton>
+              <IconButton label="关机" onClick={() => setShutdownOpen(true)}><Power size={19} /></IconButton>
+            </span>
             <button className="search-trigger glass-clear" aria-label="搜索所有内容" title="搜索所有内容" onClick={() => setSearchOpen(true)}><MagnifyingGlass size={18} /><span>搜索所有内容</span><kbd><Command size={12} />K</kbd></button>
             <Button className="manual-save" variant="secondary" size="sm" loading={saveStatus === "saving"} onClick={() => void saveNow().catch(() => undefined)}><FloppyDisk size={16} />手动保存</Button>
             <Button className="save-exit" variant="ghost" size="sm" loading={exitState === "saving"} disabled={exitState === "done"} onClick={() => void saveAndExit()}><Power size={16} />{exitState === "error" ? "退出失败，重试" : "保存并退出"}</Button>
@@ -238,6 +246,15 @@ export function AppLayout() {
         <main className="page-container" id="main-content" tabIndex={-1}><Outlet /></main>
       </div>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <ConfirmDialog
+        open={shutdownOpen}
+        title="关机？"
+        description="执行后电脑会在 10 秒后关机（可用 shutdown /a 取消）。请先确认已保存工作。"
+        confirmLabel="确认关机"
+        danger
+        onClose={() => setShutdownOpen(false)}
+        onConfirm={async () => { await api.shutdown().catch(() => undefined); setShutdownOpen(false); }}
+      />
       <Modal open={Boolean(renameTarget)} onClose={() => setRenameTarget(null)} title="重命名导航">
         <div className="rename-panel">
           <input
