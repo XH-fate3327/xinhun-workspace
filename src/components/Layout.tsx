@@ -51,9 +51,14 @@ export function AppLayout() {
   const theme = data.settings.theme === "dark" ? "dark" : "light";
   const ambientScene = chooseAmbientScene(currentPage.module, theme);
   const customBackground = typeof data.settings.background_image === "string" && data.settings.background_image.startsWith("data:image") ? data.settings.background_image : "";
-  // 背景透明：用 Windows 桌面壁纸作背景，优先级高于自定义背景图
+  // 背景透明：整窗半透明 + 页面背景透明，让桌面动态壁纸透出来（优先级高于自定义背景图）
   const transparentBackground = data.settings.transparentBackground === true;
-  const backgroundUrl = transparentBackground ? "/api/system/wallpaper" : customBackground;
+  const backgroundUrl = transparentBackground ? "" : customBackground;
+  useEffect(() => {
+    document.body.classList.toggle("transparent-background", transparentBackground);
+    void api.setWindowOpacity(transparentBackground ? 200 : 255).catch(() => undefined);
+    return () => { document.body.classList.remove("transparent-background"); };
+  }, [transparentBackground]);
 
   // 侧边栏顺序：可拖动排序，结果存 settings.navOrder（分组名 → 路由数组）
   const navOrder = (data.settings.navOrder as Record<string, string[]> | undefined) ?? {};
@@ -187,7 +192,7 @@ export function AppLayout() {
       data-module={currentPage.module}
       data-ambient={ambientScene}
     >
-      {backgroundUrl ? <CustomBackground url={backgroundUrl} /> : appearance === "liquid" ? <AmbientEnvironment scene={ambientScene} /> : appearance === "notebook" ? <NotebookEnvironment /> : null}
+      {backgroundUrl ? <CustomBackground url={backgroundUrl} /> : transparentBackground ? null : appearance === "liquid" ? <AmbientEnvironment scene={ambientScene} /> : appearance === "notebook" ? <NotebookEnvironment /> : null}
       <a className="skip-link" href="#main-content">跳到主要内容</a>
       <aside className="sidebar glass-regular">
         <div className="brand"><div className="brand-mark" aria-hidden="true"><img src="/assets/brand/app-icon.png" alt="" draggable={false} /></div><div className="brand-copy"><strong>心魂工作台</strong><span>本地个人空间</span></div>{appearance === "neo" ? <span className="brand-edition">NEO / PERSONAL CONTROL DESK</span> : null}</div>

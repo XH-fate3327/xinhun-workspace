@@ -264,6 +264,31 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     return reply.type("image/jpeg").send(fs.readFileSync(file));
   });
 
+  // 应用窗口整体透明度（背景透明功能用：浏览器窗口无法局部透明，用整窗 alpha 近似）
+  app.post("/api/system/window-opacity", async (request) => {
+    const body = z.object({ alpha: z.number().int().min(30).max(255) }).parse(request.body ?? {});
+    const script = `
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class XOpacity {
+  [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr h, int i);
+  [DllImport("user32.dll")] public static extern int SetWindowLong(IntPtr h, int i, int v);
+  [DllImport("user32.dll")] public static extern bool SetLayeredWindowAttributes(IntPtr h, uint key, byte alpha, uint flags);
+}
+"@
+$p = Get-Process | Where-Object { $_.MainWindowTitle -eq '心魂工作台' } | Select-Object -First 1
+if ($p) {
+  $h = $p.MainWindowHandle
+  $ex = [XOpacity]::GetWindowLong($h, -20)
+  [XOpacity]::SetWindowLong($h, -20, $ex -bor 0x80000) | Out-Null
+  [XOpacity]::SetLayeredWindowAttributes($h, 0, ${body.alpha}, 2) | Out-Null
+}
+`;
+    execFile("powershell", ["-NoProfile", "-Command", script], { windowsHide: true }, () => undefined);
+    return { data: { alpha: body.alpha } };
+  });
+
   // 打开「控制面板」
   app.post("/api/system/open-control-panel", async () => {
     const child = spawn("explorer.exe", ["shell:ControlPanelFolder"], { detached: true, stdio: "ignore" });
