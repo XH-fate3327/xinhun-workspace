@@ -8,10 +8,6 @@ export type WorkspaceState = {
   planCompletions: Entity[];
   calendarNotes: Entity[];
   mediaContents: Entity[];
-  devProjects: Entity[];
-  devMilestones: Entity[];
-  devWorkItems: Entity[];
-  devLogs: Entity[];
   clients: Entity[];
   consultingProjects: Entity[];
   consultingInteractions: Entity[];
@@ -35,15 +31,6 @@ export type WorkspaceState = {
 };
 
 export type CollectionName = Exclude<keyof WorkspaceState, "settings" | "trash">;
-
-export type DashboardData = {
-  date: string;
-  overview: { completed: number; total: number; progress: number; scheduledMinutes: number };
-  timeline: Entity[];
-  unscheduled: Entity[];
-  attention: Entity[];
-  summaries: Record<string, Entity[]>;
-};
 
 export type BackupRecord = {
   id: string;

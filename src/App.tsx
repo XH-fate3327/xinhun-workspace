@@ -5,7 +5,6 @@ import { ErrorState, Skeleton } from "./components/ui";
 
 const PlanPage = lazy(() => import("./pages/PlanPage").then((module) => ({ default: module.PlanPage })));
 const MediaPage = lazy(() => import("./pages/MediaPage").then((module) => ({ default: module.MediaPage })));
-const DevelopmentPage = lazy(() => import("./pages/DevelopmentPage").then((module) => ({ default: module.DevelopmentPage })));
 const DeskPage = lazy(() => import("./pages/DeskPage").then((module) => ({ default: module.DeskPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 
@@ -21,7 +20,6 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <LazyPage><PlanPage /></LazyPage> },
       { path: "media", element: <LazyPage><MediaPage /></LazyPage> },
-      { path: "development", element: <LazyPage><DevelopmentPage /></LazyPage> },
       { path: "desk", element: <LazyPage><DeskPage /></LazyPage> },
       { path: "settings", element: <LazyPage><SettingsPage /></LazyPage> },
     ],

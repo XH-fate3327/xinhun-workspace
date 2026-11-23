@@ -21,23 +21,19 @@ const baseGroups = [
   { label: "工作", links: [
     { to: "/media", label: "自媒体", module: "media", tone: "coral" },
     { to: "/desk", label: "处理台", module: "desk", tone: "cyan" },
-    { to: "/development", label: "开发工作", module: "development", tone: "teal" },
   ] },
   { label: "系统", links: [{ to: "/settings", label: "数据与设置", module: "settings", tone: "graphite" }] },
 ] satisfies Array<{ label: string; links: Array<{ to: string; label: string; module: ModuleArtworkName; tone: string }> }>;
 
 const collectionRoutes: Record<string, string> = {
-  mediaContents: "/media", devProjects: "/development", devMilestones: "/development",
-  devWorkItems: "/development", devLogs: "/development", quickMemos: "/", deskProjects: "/desk",
-  planSlots: "/",
+  mediaContents: "/media", quickMemos: "/", deskProjects: "/desk", planSlots: "/",
 };
 
 const routeMeta: Record<string, { label: string; module: ModuleArtworkName; tone: string; index: string }> = {
   "/": { label: "任务计划", module: "plan", tone: "cyan", index: "00" },
   "/media": { label: "自媒体", module: "media", tone: "coral", index: "01" },
-  "/development": { label: "开发工作", module: "development", tone: "teal", index: "02" },
-  "/desk": { label: "处理台", module: "desk", tone: "cyan", index: "03" },
-  "/settings": { label: "数据与设置", module: "settings", tone: "graphite", index: "04" },
+  "/desk": { label: "处理台", module: "desk", tone: "cyan", index: "02" },
+  "/settings": { label: "数据与设置", module: "settings", tone: "graphite", index: "03" },
 };
 
 export function AppLayout() {
@@ -45,7 +41,6 @@ export function AppLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [quickOpen, setQuickOpen] = useState(false);
   const [exitState, setExitState] = useState<"idle" | "saving" | "done" | "error">("idle");
   const system = useQuery({ queryKey: ["system"], queryFn: api.systemStatus, staleTime: 30_000 });
   const currentPage = routeMeta[location.pathname] ?? routeMeta["/"];
@@ -190,7 +185,6 @@ export function AppLayout() {
       <a className="skip-link" href="#main-content">跳到主要内容</a>
       <aside className="sidebar glass-regular">
         <div className="brand"><div className="brand-mark" aria-hidden="true"><img src="/assets/brand/app-icon.png" alt="" draggable={false} /></div><div className="brand-copy"><strong>心魂工作台</strong><span>本地个人空间</span></div>{appearance === "neo" ? <span className="brand-edition">NEO / PERSONAL CONTROL DESK</span> : null}</div>
-        <Button className="quick-create" onClick={() => setQuickOpen(true)}><Plus size={18} />快速新增</Button>
         <nav aria-label="主导航">
           {groups.map((group) => (
             <div className="nav-group" key={group.label}>
@@ -229,7 +223,7 @@ export function AppLayout() {
             <IconButton label={collapsed ? "展开导航" : "收起导航"} onClick={() => setCollapsed((value) => !value)}><SidebarSimple size={20} /></IconButton>
             <span className="toolbar-page-icon" data-tone={currentPage.tone} aria-hidden="true"><ModuleArtwork module={currentPage.module} /></span>
             <div className="toolbar-context"><strong>{navLabels[location.pathname] ?? currentPage.label}</strong><span>{new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date())}</span></div>
-            {appearance === "neo" ? <span className="topbar-index">{currentPage.index} / 04</span> : null}
+            {appearance === "neo" ? <span className="topbar-index">{currentPage.index} / 03</span> : null}
           </div>
           <div className="topbar-actions">
             <button className="search-trigger glass-clear" aria-label="搜索所有内容" title="搜索所有内容" onClick={() => setSearchOpen(true)}><MagnifyingGlass size={18} /><span>搜索所有内容</span><kbd><Command size={12} />K</kbd></button>
@@ -241,7 +235,6 @@ export function AppLayout() {
         <main className="page-container" id="main-content" tabIndex={-1}><Outlet /></main>
       </div>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <QuickCreateModal open={quickOpen} onClose={() => setQuickOpen(false)} />
       <Modal open={Boolean(renameTarget)} onClose={() => setRenameTarget(null)} title="重命名导航">
         <div className="rename-panel">
           <input
@@ -301,7 +294,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
       return result;
     }, {});
   }, [search.data]);
-  const moduleNames: Record<string, string> = { dashboard: "首页", today: "今日计划", media: "自媒体", desk: "处理台", plan: "任务计划", development: "开发工作", consulting: "咨询工作", fitness: "健身计划", diet: "饮食计划", entertainment: "游戏娱乐" };
+  const moduleNames: Record<string, string> = { dashboard: "首页", today: "今日计划", media: "自媒体", desk: "处理台", plan: "任务计划", consulting: "咨询工作", fitness: "健身计划", diet: "饮食计划", entertainment: "游戏娱乐" };
   return (
     <Modal open={open} title="搜索工作台" description="按模块查找标题、笔记和记录内容" onClose={onClose} wide>
       <div className="command-search glass-clear"><MagnifyingGlass size={20} /><input autoFocus aria-label="搜索关键词" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入关键词" /></div>
@@ -312,23 +305,6 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           ))}</section>
         ))}
       </div>
-    </Modal>
-  );
-}
-
-function QuickCreateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const navigate = useNavigate();
-  const options = [
-    { label: "今日事项", detail: "安排今天要执行的事情", route: "/today?new=1", tone: "cyan", module: "today" },
-    { label: "内容灵感", detail: "记录一个自媒体选题", route: "/media?new=1", tone: "coral", module: "media" },
-    { label: "开发工作项", detail: "添加功能、需求或 Bug", route: "/development?new=work-item", tone: "teal", module: "development" },
-    { label: "咨询跟进", detail: "安排客户后续联系", route: "/consulting?new=followup", tone: "amber", module: "consulting" },
-    { label: "训练记录", detail: "开始或安排一次训练", route: "/fitness?new=workout", tone: "sage", module: "fitness" },
-    { label: "餐食记录", detail: "记录计划或实际饮食", route: "/diet?new=meal", tone: "apricot", module: "diet" },
-  ];
-  return (
-    <Modal open={open} title="快速新增" description="选择要记录的内容类型" onClose={onClose}>
-      <div className="quick-grid">{options.map((option) => <button data-tone={option.tone} key={option.label} onClick={() => { navigate(option.route); onClose(); }}><span className="quick-option-icon"><ModuleArtwork module={option.module as ModuleArtworkName} /></span><div><Badge>{option.label}</Badge><p>{option.detail}</p></div><ArrowRight size={18} /></button>)}</div>
     </Modal>
   );
 }

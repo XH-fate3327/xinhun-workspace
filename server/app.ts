@@ -8,7 +8,6 @@ import { getAppPaths, type AppPaths } from "./config.js";
 import { DatabaseManager } from "./database.js";
 import { AppStore, NotFoundError, ValidationError } from "./store.js";
 import { BackupManager } from "./backup.js";
-import { buildDashboard } from "./dashboard.js";
 import { collectionDefinitions, isCollectionName, sourceCollectionByType } from "./collections.js";
 import { openPathCommand } from "./platform.js";
 
@@ -103,11 +102,6 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   app.get("/api/state", async () => ({ data: store.state() }));
 
-  app.get("/api/dashboard", async (request) => {
-    const query = request.query as { date?: string };
-    const date = query.date && /^\d{4}-\d{2}-\d{2}$/.test(query.date) ? query.date : localDate();
-    return { data: buildDashboard(store, date) };
-  });
 
   app.get("/api/search", async (request) => {
     const query = request.query as { q?: string };

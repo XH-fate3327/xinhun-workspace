@@ -1,4 +1,4 @@
-import type { CollectionName, WorkspaceState, DashboardData, BackupRecord, Entity } from "./types";
+import type { CollectionName, WorkspaceState, BackupRecord, Entity } from "./types";
 
 export class ApiError extends Error {
   constructor(message: string, public status: number) {
@@ -22,7 +22,6 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   state: () => request<WorkspaceState>("/api/state"),
-  dashboard: (date: string) => request<DashboardData>(`/api/dashboard?date=${encodeURIComponent(date)}`),
   search: (query: string) => request<Entity[]>(`/api/search?q=${encodeURIComponent(query)}`),
   create: (collection: CollectionName, input: Record<string, any>) =>
     request<Entity>(`/api/collections/${collection}`, { method: "POST", body: JSON.stringify(input) }),

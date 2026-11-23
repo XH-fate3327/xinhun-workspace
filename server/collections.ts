@@ -55,38 +55,6 @@ export const collectionDefinitions = {
     fields: ["title", "platform", "content_format", "stage", "planned_publish_at", "published_at", "copy_text", "asset_path", "publish_url", "views", "likes", "comments", "archived_at"],
     search: ["title", "platform", "copy_text"],
   },
-  devProjects: {
-    table: "dev_projects",
-    title: "name",
-    module: "development",
-    required: ["name"],
-    fields: ["name", "description", "status", "local_path", "repository_url", "document_url", "archived_at"],
-    search: ["name", "description"],
-  },
-  devMilestones: {
-    table: "dev_milestones",
-    title: "name",
-    module: "development",
-    required: ["project_id", "name"],
-    fields: ["project_id", "name", "target_date", "status"],
-    search: ["name"],
-  },
-  devWorkItems: {
-    table: "dev_work_items",
-    title: "title",
-    module: "development",
-    required: ["project_id", "title"],
-    fields: ["project_id", "milestone_id", "title", "item_type", "priority", "status", "description"],
-    search: ["title", "description"],
-  },
-  devLogs: {
-    table: "dev_logs",
-    title: "content",
-    module: "development",
-    required: ["project_id", "log_date", "content"],
-    fields: ["project_id", "log_date", "content"],
-    search: ["content"],
-  },
   clients: {
     table: "clients",
     title: "name",
@@ -241,7 +209,6 @@ export function isCollectionName(value: string): value is CollectionName {
 
 export const sourceCollectionByType: Record<string, CollectionName> = {
   media_content: "mediaContents",
-  dev_work_item: "devWorkItems",
   consulting_deliverable: "consultingDeliverables",
   consulting_followup: "consultingFollowups",
   workout: "workouts",
