@@ -76,7 +76,15 @@ function newId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 }
 
-function appendImage(current: DeskBlock[], dataUrl: string): DeskBlock[] {
+function addImageToBlock(current: DeskBlock[], targetId: string | null, dataUrl: string): DeskBlock[] {
+  // 优先放进「被点击的那个板块」
+  if (targetId) {
+    const index = current.findIndex((block) => block.id === targetId);
+    if (index >= 0 && current[index].images.length < MAX_IMAGES) {
+      return current.map((block, i) => (i === index ? { ...block, images: [...block.images, dataUrl] } : block));
+    }
+  }
+  // 否则放进最后一个未满的板块，仍满则新建
   const last = current[current.length - 1];
   if (last && last.images.length < MAX_IMAGES) {
     return current.map((block, i) => (i === current.length - 1 ? { ...block, images: [...block.images, dataUrl] } : block));
@@ -100,6 +108,7 @@ export function DeskPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
+  const pendingTargetRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (selectedId == null && projects.length > 0) setSelectedId(projects[0].id);
@@ -131,12 +140,17 @@ export function DeskPage() {
 
   useEffect(() => registerSaveHandler(persistProject), [persistProject, registerSaveHandler]);
 
-  const addImageBlock = useCallback(async (file: File) => {
+  const addImageFiles = useCallback(async (files: File[], targetId: string | null) => {
     setBusy(true);
     setError("");
     try {
-      const dataUrl = await compressImage(file);
-      setBlocks((current) => appendImage(current, dataUrl));
+      const urls: string[] = [];
+      for (const file of files) urls.push(await compressImage(file));
+      setBlocks((current) => {
+        let next = current;
+        for (const dataUrl of urls) next = addImageToBlock(next, targetId, dataUrl);
+        return next;
+      });
     } catch (cause) {
       setError((cause as Error).message);
     } finally {
@@ -189,20 +203,24 @@ export function DeskPage() {
   const onPaste = useCallback((event: ClipboardEvent<HTMLDivElement>) => {
     const items = event.clipboardData?.items;
     if (!items) return;
+    const files: File[] = [];
     for (const item of Array.from(items)) {
       if (item.kind === "file" && item.type.startsWith("image/")) {
         const file = item.getAsFile();
-        if (file) void addImageBlock(file);
+        if (file) files.push(file);
       }
     }
-  }, [addImageBlock]);
+    if (files.length) void addImageFiles(files, null);
+  }, [addImageFiles]);
 
   const onFiles = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
-    for (const file of Array.from(files)) void addImageBlock(file);
+    const target = pendingTargetRef.current;
+    pendingTargetRef.current = null;
     event.target.value = "";
-  }, [addImageBlock]);
+    void addImageFiles(Array.from(files), target);
+  }, [addImageFiles]);
 
   return (
     <div className="desk-page" onPaste={onPaste}>
@@ -211,7 +229,7 @@ export function DeskPage() {
         eyebrow="工作台"
         title="处理台"
         description="按项目分类，图片在左、文字在右，一个板块最多放 4 张图。"
-        actions={<Button onClick={() => fileInput.current?.click()} loading={busy}><UploadSimple size={17} />添加图片</Button>}
+        actions={<Button onClick={() => { pendingTargetRef.current = null; fileInput.current?.click(); }} loading={busy}><UploadSimple size={17} />添加图片</Button>}
       />
       <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={onFiles} />
       <div className="desk-layout">
@@ -256,7 +274,7 @@ export function DeskPage() {
                       </div>
                     ))}
                     {block.images.length < MAX_IMAGES ? (
-                      <button className="desk-card-add" onClick={() => fileInput.current?.click()}><ImageSquare size={17} /><span>加图</span></button>
+                      <button className="desk-card-add" onClick={() => { pendingTargetRef.current = block.id; fileInput.current?.click(); }}><ImageSquare size={17} /><span>加图</span></button>
                     ) : null}
                   </div>
                   <textarea
@@ -275,7 +293,7 @@ export function DeskPage() {
               ))}
               <div className="desk-add-bar">
                 <button onClick={addTextBlock}><TextT size={16} />写文字</button>
-                <button onClick={() => fileInput.current?.click()}><ImageSquare size={16} />加图片</button>
+                <button onClick={() => { pendingTargetRef.current = null; fileInput.current?.click(); }}><ImageSquare size={16} />加图片</button>
                 <span className="quiet-line">Ctrl+V 粘贴截图</span>
               </div>
             </div>
