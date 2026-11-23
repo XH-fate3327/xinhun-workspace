@@ -451,6 +451,7 @@ function systemStatus(paths: AppPaths, backups: BackupManager): Record<string, a
 
 function openPath(target: string): void {
   const { command, args } = openPathCommand(target);
-  const child = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
+  // 不能带 windowsHide，否则 explorer 打开的文件夹窗口也会被隐藏
+  const child = spawn(command, args, { detached: true, stdio: "ignore" });
   child.unref();
 }
