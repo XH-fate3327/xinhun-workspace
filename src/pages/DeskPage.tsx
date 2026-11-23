@@ -214,12 +214,14 @@ export function DeskPage() {
   }, [addImageFiles]);
 
   const onFiles = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
+    const fileList = event.target.files;
+    if (!fileList || fileList.length === 0) return;
+    // 必须先取出文件数组，再清空 input（清空会同时清掉 files 列表）
+    const files = Array.from(fileList);
     const target = pendingTargetRef.current;
     pendingTargetRef.current = null;
     event.target.value = "";
-    void addImageFiles(Array.from(files), target);
+    void addImageFiles(files, target);
   }, [addImageFiles]);
 
   return (
