@@ -454,4 +454,32 @@ function openPath(target: string): void {
   // 不能带 windowsHide，否则 explorer 打开的文件夹窗口也会被隐藏
   const child = spawn(command, args, { detached: true, stdio: "ignore" });
   child.unref();
+  // 后台进程启动的窗口默认不抢前台，这里等它出现后把它提到最前
+  const pid = child.pid ?? 0;
+  const titleHint = path.basename(target).replace(/'/g, "''");
+  const script = `
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class XinhunBring {
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int c);
+  [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
+}
+"@
+Start-Sleep -Milliseconds 700
+$h = [IntPtr]::Zero
+$p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue
+if ($p -and $p.MainWindowHandle -ne 0) { $h = $p.MainWindowHandle }
+if ($h -eq [IntPtr]::Zero) {
+  $w = Get-Process explorer -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like '*${titleHint}*' } | Select-Object -First 1
+  if ($w) { $h = $w.MainWindowHandle }
+}
+if ($h -ne [IntPtr]::Zero) {
+  [XinhunBring]::ShowWindow($h, 9) | Out-Null
+  [XinhunBring]::BringWindowToTop($h) | Out-Null
+  [XinhunBring]::SetForegroundWindow($h) | Out-Null
+}
+`;
+  execFile("powershell", ["-NoProfile", "-Command", script], { windowsHide: true }, () => undefined);
 }
