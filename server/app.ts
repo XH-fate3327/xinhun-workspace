@@ -235,6 +235,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     return { data: { opened: true } };
   });
 
+  // 打开「此电脑」资源管理器
+  app.post("/api/system/open-explorer", async () => {
+    const child = spawn("explorer.exe", ["shell:MyComputerFolder"], { detached: true, stdio: "ignore" });
+    child.unref();
+    return { data: { opened: true } };
+  });
+
   // 从本地 exe / 文件提取关联图标（启动台默认图标用）
   app.get("/api/system/icon", async (request) => {
     const query = request.query as { path?: string };
