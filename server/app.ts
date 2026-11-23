@@ -206,6 +206,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.get("/api/settings", async () => ({ data: store.getSettings() }));
   app.put("/api/settings", async (request) => ({ data: store.setSettings(bodySchema.parse(request.body ?? {})) }));
   app.get("/api/trash", async () => ({ data: store.trash() }));
+  app.delete("/api/trash/permanent", async () => ({ data: { deleted: store.permanentDeleteAll() } }));
 
   app.get("/api/system/status", async () => ({ data: systemStatus(paths, backups) }));
   app.get("/api/system/data-file", async () => ({ data: fileInfo(paths.dataFile) }));

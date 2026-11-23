@@ -94,6 +94,20 @@ export class AppStore {
     })();
   }
 
+  permanentDeleteAll(): number {
+    const entries = this.trash();
+    this.manager.db.transaction(() => {
+      for (const entry of entries) {
+        const name = entry.collection as CollectionName;
+        const definition = collectionDefinitions[name];
+        if (!definition) continue;
+        this.manager.db.prepare(`DELETE FROM ${definition.table} WHERE id = ? AND deleted_at IS NOT NULL`).run(entry.entity_id as string);
+      }
+      this.manager.db.prepare("DELETE FROM trash_entries").run();
+    })();
+    return entries.length;
+  }
+
   trash(): Entity[] {
     return this.manager.db.prepare("SELECT * FROM trash_entries ORDER BY deleted_at DESC").all() as Entity[];
   }

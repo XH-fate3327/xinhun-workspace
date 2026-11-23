@@ -20,6 +20,7 @@ export function SettingsPage() {
   const [busy, setBusy] = useState("");
   const [restoreId, setRestoreId] = useState<string | null>(null);
   const [permanent, setPermanent] = useState<{ collection: CollectionName; id: string; title: string } | null>(null);
+  const [emptyTrashOpen, setEmptyTrashOpen] = useState(false);
   const backgroundInput = useRef<HTMLInputElement>(null);
   const saveSetting = (key: string, value: any) => run(() => api.saveSettings({ [key]: value }));
   const toggleAutostart = async (enabled: boolean) => {
@@ -84,11 +85,12 @@ export function SettingsPage() {
           <div><div><strong>开机自启</strong><small>{autostart.data?.supported ? "登录 Windows 时自动启动心魂工作台" : "当前系统不支持"}</small></div><div className="theme-toggle" role="group" aria-label="开机自启"><button className={autostart.data?.enabled ? "active" : ""} aria-pressed={Boolean(autostart.data?.enabled)} disabled={autostartBusy || !autostart.data?.supported} onClick={() => void toggleAutostart(true)}>开启</button><button className={autostart.data && !autostart.data.enabled ? "active" : ""} aria-pressed={Boolean(autostart.data && !autostart.data.enabled)} disabled={autostartBusy || !autostart.data?.supported} onClick={() => void toggleAutostart(false)}>关闭</button></div></div>
         </div>
       </Section>
-      <Section title="回收站" description="删除记录先进入这里，永久删除需要再次确认">
+      <Section title="回收站" description="删除记录先进入这里，永久删除需要再次确认" action={data.trash.length ? <Button variant="ghost" size="sm" className="danger-text" onClick={() => setEmptyTrashOpen(true)}><Trash size={15} />一键全部删除</Button> : undefined}>
         {data.trash.length ? <div className="trash-list">{data.trash.map((item) => <article key={item.id}><Trash size={18} /><div><strong>{item.display_title}</strong><small>{collectionLabels[item.collection] || item.collection} · 删除于 {formatDateTime(item.deleted_at)}</small></div><Button variant="ghost" size="sm" onClick={() => void run(() => api.restore(item.collection as CollectionName, item.entity_id))}><ArrowCounterClockwise size={15} />恢复</Button><Button variant="ghost" size="sm" className="danger-text" onClick={() => setPermanent({ collection: item.collection as CollectionName, id: item.entity_id, title: item.display_title })}>永久删除</Button></article>)}</div> : <p className="quiet-line">回收站是空的。</p>}
       </Section>
       <ConfirmDialog open={Boolean(restoreId)} title="恢复这份备份？" description={selectedBackup ? `${selectedBackup.label || selectedBackup.filename} · ${formatDateTime(selectedBackup.createdAt)} · ${formatBytes(selectedBackup.size)}。恢复前会先为当前数据创建安全备份。` : "恢复前会先为当前数据创建安全备份。"} confirmLabel="创建安全备份并恢复" onClose={() => setRestoreId(null)} onConfirm={async () => { if (!restoreId) return; setBusy("restore"); try { await api.restoreBackup(restoreId); window.location.reload(); } finally { setBusy(""); } }} />
       <ConfirmDialog open={Boolean(permanent)} title="永久删除这条记录？" description={`“${permanent?.title ?? "记录"}”将无法从回收站恢复。`} confirmLabel="永久删除" danger onClose={() => setPermanent(null)} onConfirm={async () => { if (permanent) await run(() => api.permanentDelete(permanent.collection, permanent.id)); }} />
+      <ConfirmDialog open={emptyTrashOpen} title="清空回收站？" description={`回收站里的 ${data.trash.length} 条记录将被永久删除，无法恢复。`} confirmLabel="全部永久删除" danger onClose={() => setEmptyTrashOpen(false)} onConfirm={async () => { await run(() => api.emptyTrash()); setEmptyTrashOpen(false); }} />
     </div>
   );
 }

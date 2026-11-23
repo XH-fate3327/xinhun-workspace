@@ -34,6 +34,7 @@ export const api = {
     request<Entity>(`/api/collections/${collection}/${id}/restore`, { method: "POST" }),
   permanentDelete: (collection: CollectionName, id: string) =>
     request<void>(`/api/collections/${collection}/${id}/permanent`, { method: "DELETE" }),
+  emptyTrash: () => request<{ deleted: number }>("/api/trash/permanent", { method: "DELETE" }),
   completePlan: (id: string) => request<Entity>(`/api/plan-items/${id}/complete`, { method: "POST" }),
   postponePlan: (id: string, date: string) =>
     request<Entity>(`/api/plan-items/${id}/postpone`, { method: "POST", body: JSON.stringify({ date }) }),
