@@ -239,6 +239,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.post("/api/system/open-explorer", async () => {
     const child = spawn("explorer.exe", ["shell:MyComputerFolder"], { detached: true, stdio: "ignore" });
     child.unref();
+    bringToFront(child.pid ?? 0, "此电脑");
     return { data: { opened: true } };
   });
 
@@ -461,9 +462,11 @@ function openPath(target: string): void {
   // 不能带 windowsHide，否则 explorer 打开的文件夹窗口也会被隐藏
   const child = spawn(command, args, { detached: true, stdio: "ignore" });
   child.unref();
-  // 后台进程启动的窗口默认不抢前台，这里等它出现后把它提到最前
-  const pid = child.pid ?? 0;
-  const titleHint = path.basename(target).replace(/'/g, "''");
+  bringToFront(child.pid ?? 0, path.basename(target));
+}
+
+function bringToFront(pid: number, titleHint: string): void {
+  const safeTitle = String(titleHint).replace(/'/g, "''");
   const script = `
 Add-Type @"
 using System;
@@ -479,7 +482,7 @@ $h = [IntPtr]::Zero
 $p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue
 if ($p -and $p.MainWindowHandle -ne 0) { $h = $p.MainWindowHandle }
 if ($h -eq [IntPtr]::Zero) {
-  $w = Get-Process explorer -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like '*${titleHint}*' } | Select-Object -First 1
+  $w = Get-Process explorer -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like '*${safeTitle}*' } | Select-Object -First 1
   if ($w) { $h = $w.MainWindowHandle }
 }
 if ($h -ne [IntPtr]::Zero) {
