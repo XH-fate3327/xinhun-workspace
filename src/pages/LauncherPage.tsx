@@ -84,6 +84,7 @@ export function LauncherPage() {
   const [catDragIndex, setCatDragIndex] = useState<number | null>(null);
   const [catOverIndex, setCatOverIndex] = useState<number | null>(null);
   const [categoryMenu, setCategoryMenu] = useState<{ id: string; name: string } | null>(null);
+  const catDraggedRef = useRef(false);
   const iconInput = useRef<HTMLInputElement>(null);
 
   const openItem = async (item: Entity) => {
@@ -241,24 +242,32 @@ export function LauncherPage() {
       {error ? <div className="field-error">{error}</div> : null}
 
       <div className="launcher-categories">
-        <div className={classNames("launcher-category", activeCategory === "all" && "active")}>
-          <button className="launcher-category-main" onClick={() => setActiveCategory("all")}><strong>全部</strong></button>
-          <small className="launcher-category-count">{items.length}</small>
+        <div
+          className={classNames("launcher-category", activeCategory === "all" && "active")}
+          role="button"
+          tabIndex={0}
+          onClick={() => setActiveCategory("all")}
+          onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setActiveCategory("all"); }}
+        >
+          <strong>全部</strong><small className="launcher-category-count">{items.length}</small>
         </div>
         {categories.map((category, index) => (
           <div
             key={category.id}
             className={classNames("launcher-category", "is-draggable", activeCategory === category.id && "active", catDragIndex === index && "is-dragging", catOverIndex === index && catDragIndex !== null && catDragIndex !== index && "is-over")}
             draggable
-            onDragStart={() => setCatDragIndex(index)}
+            role="button"
+            tabIndex={0}
+            onDragStart={() => { catDraggedRef.current = true; setCatDragIndex(index); }}
             onDragOver={(event) => { event.preventDefault(); setCatOverIndex(index); }}
             onDrop={(event) => void onCategoryReorder(index)(event)}
-            onDragEnd={() => { setCatDragIndex(null); setCatOverIndex(null); }}
+            onDragEnd={() => { setCatDragIndex(null); setCatOverIndex(null); window.setTimeout(() => { catDraggedRef.current = false; }, 50); }}
+            onClick={() => { if (catDraggedRef.current) { catDraggedRef.current = false; return; } setActiveCategory(category.id); }}
+            onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setActiveCategory(category.id); }}
             onContextMenu={(event) => { event.preventDefault(); setCategoryMenu({ id: category.id, name: category.name }); }}
-            title={`${category.name}（右键修改/删除，拖动调整顺序）`}
+            title={`${category.name}（点击切换，右键修改/删除，拖动调整顺序）`}
           >
-            <button className="launcher-category-main" onClick={() => setActiveCategory(category.id)}><strong>{category.name}</strong></button>
-            <small className="launcher-category-count">{items.filter((item) => String(item.category ?? "") === category.id).length}</small>
+            <strong>{category.name}</strong><small className="launcher-category-count">{items.filter((item) => String(item.category ?? "") === category.id).length}</small>
           </div>
         ))}
         <button className="launcher-category launcher-category-add" onClick={() => setCategoryDraft({ name: "" })}><Plus size={15} />新建分类夹</button>
