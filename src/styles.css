@@ -629,6 +629,16 @@ body.transparent-background .app-shell > .ambient-environment, body.transparent-
 .accent-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
 .accent-swatch.active { border-color: var(--text); }
 body { zoom: var(--ui-scale, 1); }
+/* 记录台 Markdown 预览 */
+.desk-card-preview { overflow-y: auto; }
+.desk-card-preview h3, .desk-card-preview h4, .desk-card-preview h5, .desk-card-preview h6 { margin: 6px 0 4px; font-size: 13px; }
+.desk-card-preview p { margin: 4px 0; }
+.desk-card-preview ul { margin: 4px 0; padding-left: 18px; }
+.desk-card-preview li { margin: 2px 0; }
+.desk-card-preview pre { background: var(--surface-inset); padding: 8px 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+.desk-card-preview code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: var(--surface-inset); padding: 1px 4px; border-radius: 4px; }
+.desk-card-preview pre code { background: transparent; padding: 0; }
+.desk-card-preview a { color: var(--accent); }
 .nav-link.active {
   color: var(--accent-deep);
   font-weight: 600;

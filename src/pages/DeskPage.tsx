@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ClipboardEvent } from "react";
-import { ArrowDown, ArrowUp, FolderSimple, ImageSquare, Plus, TextT, Trash, UploadSimple } from "@phosphor-icons/react";
+import { ArrowDown, ArrowUp, Eye, FolderSimple, PencilSimple, ImageSquare, Plus, TextT, Trash, UploadSimple } from "@phosphor-icons/react";
 import { api } from "../api";
 import { useWorkspace } from "../WorkspaceContext";
 import { classNames } from "../utils";
@@ -12,6 +12,54 @@ type DeskBlock = { id: string; images: string[]; text: string };
 
 const MAX_IMAGE_EDGE = 1000;
 const MAX_IMAGES = 4;
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function renderInline(value: string): string {
+  return value
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+}
+
+/** 轻量 Markdown：标题 / 列表 / 代码块 / 粗体 / 行内代码 / 链接 */
+function renderMarkdown(source: string): string {
+  const lines = escapeHtml(source).split("\n");
+  const out: string[] = [];
+  const code: string[] = [];
+  let inCode = false;
+  let inList = false;
+  const closeList = () => { if (inList) { out.push("</ul>"); inList = false; } };
+  for (const line of lines) {
+    if (line.trim().startsWith("```")) {
+      if (inCode) { out.push(`<pre><code>${code.join("\n")}</code></pre>`); code.length = 0; inCode = false; }
+      else { closeList(); inCode = true; }
+      continue;
+    }
+    if (inCode) { code.push(line); continue; }
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
+    if (heading) {
+      closeList();
+      const level = Math.min(heading[1].length + 2, 6);
+      out.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
+      continue;
+    }
+    const item = /^\s*[-*]\s+(.*)$/.exec(line);
+    if (item) {
+      if (!inList) { out.push("<ul>"); inList = true; }
+      out.push(`<li>${renderInline(item[1])}</li>`);
+      continue;
+    }
+    closeList();
+    if (line.trim() === "") continue;
+    out.push(`<p>${renderInline(line)}</p>`);
+  }
+  closeList();
+  if (inCode && code.length) out.push(`<pre><code>${code.join("\n")}</code></pre>`);
+  return out.join("");
+}
 
 async function compressImage(file: Blob): Promise<string> {
   const url = URL.createObjectURL(file);
@@ -111,6 +159,7 @@ export function DeskPage() {
   const [error, setError] = useState("");
   const [hoverBlockId, setHoverBlockId] = useState<string | null>(null);
   const [dropBlockId, setDropBlockId] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const pendingTargetRef = useRef<string | null>(null);
 
@@ -314,13 +363,17 @@ export function DeskPage() {
                       <button className="desk-card-add" onClick={() => { pendingTargetRef.current = block.id; fileInput.current?.click(); }}><ImageSquare size={17} /><span>加图</span></button>
                     ) : null}
                   </div>
-                  <textarea
-                    className="desk-card-text"
-                    value={block.text}
-                    onChange={(event) => updateText(block.id, event.target.value)}
-                    placeholder="在图片右侧输入文字…"
-                    aria-label="文字"
-                  />
+                  {previewMode ? (
+                    <div className="desk-card-text desk-card-preview" dangerouslySetInnerHTML={{ __html: renderMarkdown(block.text) }} />
+                  ) : (
+                    <textarea
+                      className="desk-card-text"
+                      value={block.text}
+                      onChange={(event) => updateText(block.id, event.target.value)}
+                      placeholder="在图片右侧输入文字…"
+                      aria-label="文字"
+                    />
+                  )}
                   <div className="desk-card-tools">
                     <IconButton label="上移" onClick={() => moveBlock(index, -1)} disabled={index === 0}><ArrowUp size={14} /></IconButton>
                     <IconButton label="下移" onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1}><ArrowDown size={14} /></IconButton>
@@ -329,6 +382,7 @@ export function DeskPage() {
                 </div>
               ))}
               <div className="desk-add-bar">
+                <button onClick={() => setPreviewMode((value) => !value)}>{previewMode ? <PencilSimple size={16} /> : <Eye size={16} />}{previewMode ? "编辑" : "预览"}</button>
                 <button onClick={addTextBlock}><TextT size={16} />写文字</button>
                 <button onClick={() => { pendingTargetRef.current = null; fileInput.current?.click(); }}><ImageSquare size={16} />加图片</button>
                 <span className="quiet-line">Ctrl+V 粘贴截图</span>
