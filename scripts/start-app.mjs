@@ -19,14 +19,14 @@ const webFile = path.join(projectRoot, "dist", "index.html");
 fs.mkdirSync(logsDir, { recursive: true });
 
 if (canReuse(await healthStatus())) {
-  maybeOpenBrowser();
+  await maybeOpenBrowser();
   console.log(`心魂工作台已经在运行：${baseUrl}`);
   process.exit(0);
 }
 
 const launchLock = await acquireLaunchLock();
 if (launchLock === null) {
-  maybeOpenBrowser();
+  await maybeOpenBrowser();
   console.log(`心魂工作台已经在运行：${baseUrl}`);
   process.exit(0);
 }
@@ -39,7 +39,7 @@ process.once("exit", releaseLaunchLock);
 // 获取启动锁后再检查一次，避免两次双击在健康检查与加锁之间同时启动服务。
 const existingStatus = await healthStatus();
 if (canReuse(existingStatus)) {
-  maybeOpenBrowser();
+  await maybeOpenBrowser();
   console.log(`心魂工作台已经在运行：${baseUrl}`);
   process.exit(0);
 }
@@ -85,7 +85,7 @@ fs.writeFileSync(pidFile, JSON.stringify({ pid: child.pid, projectRoot, buildId,
 for (let attempt = 0; attempt < 80; attempt += 1) {
   const status = await healthStatus();
   if (status?.application === "xinhun-workspace" && status.buildId === buildId && status.instanceId === instanceId) {
-    maybeOpenBrowser();
+    await maybeOpenBrowser();
     console.log(`心魂工作台已启动：${baseUrl}`);
     console.log(`数据目录：${dataRoot}`);
     process.exit(0);
@@ -224,9 +224,16 @@ function removePidRecord(pid) {
   }
 }
 
-function maybeOpenBrowser() {
+async function maybeOpenBrowser() {
   if (process.env.MUZI_NO_OPEN === "1") return;
-  const { command, args } = browserOpenCommandFor(process.platform, baseUrl, path.join(dataRoot, "edge-profile"));
+  let fullscreen = false;
+  try {
+    const response = await fetch(`${baseUrl}/api/settings`, { signal: AbortSignal.timeout(1500) });
+    if (response.ok) fullscreen = (await response.json())?.data?.launchFullscreen === true;
+  } catch {
+    // 读不到设置就按默认窗口尺寸启动
+  }
+  const { command, args } = browserOpenCommandFor(process.platform, baseUrl, path.join(dataRoot, "edge-profile"), fullscreen);
   // windowsHide 必须为 false：否则全新 Edge 实例（独立 profile）的窗口会被隐藏
   const opener = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: false });
   opener.unref();
