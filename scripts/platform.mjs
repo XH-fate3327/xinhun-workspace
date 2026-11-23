@@ -32,8 +32,9 @@ export function browserOpenCommandFor(platform, url, profileDir, fullscreen = fa
     for (const exe of candidates) {
       if (fs.existsSync(exe)) {
         const args = [`--app=${url}`];
+        // 始终带窗口尺寸：全屏退出后恢复到这个尺寸，而不是铺满的窗口
+        args.push(`--window-size=${DEFAULT_WINDOW_SIZE}`);
         if (fullscreen) args.push("--start-fullscreen");
-        else args.push(`--window-size=${DEFAULT_WINDOW_SIZE}`);
         // 独立 user-data-dir：保证是全新 Edge 实例；否则复用已有进程时会忽略 --window-size
         if (profileDir) args.push(`--user-data-dir=${profileDir}`, "--no-first-run", "--no-default-browser-check");
         return { command: exe, args };
