@@ -6,11 +6,11 @@ import { classNames } from "../utils";
 import { Button, EmptyState, IconButton, Modal, PageHeader } from "../components/ui";
 import { ModuleArtwork } from "../components/ModuleArtwork";
 
-type DeskBlock =
-  | { id: string; type: "text"; text: string }
-  | { id: string; type: "image"; data_url: string; mime_type: string };
+// 一个块 = 左侧图片区（最多 4 张）+ 右侧文字
+type DeskBlock = { id: string; images: string[]; text: string };
 
-const MAX_IMAGE_EDGE = 1400;
+const MAX_IMAGE_EDGE = 1000;
+const MAX_IMAGES = 4;
 
 async function compressImage(file: Blob): Promise<string> {
   const url = URL.createObjectURL(file);
@@ -40,7 +40,33 @@ function parseBlocks(raw: unknown): DeskBlock[] {
   if (typeof raw !== "string" || !raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as DeskBlock[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    const result: DeskBlock[] = [];
+    for (const block of parsed) {
+      // 新格式（图片数组 + 文字）
+      if (Array.isArray(block?.images) && typeof block?.text === "string") {
+        result.push({ id: String(block.id ?? newId()), images: block.images.map(String), text: block.text });
+        continue;
+      }
+      // 旧格式：单图块
+      if (block?.type === "image" && typeof block?.data_url === "string") {
+        result.push({ id: String(block.id ?? newId()), images: [block.data_url], text: "" });
+        continue;
+      }
+      // 旧格式：纯文字块 —— 若上一张卡片只有图没文字，就把文字并进去（左图右字）
+      if (block?.type === "text") {
+        const text = String(block.text ?? "");
+        const last = result[result.length - 1];
+        if (last && last.images.length > 0 && !last.text) {
+          last.text = text;
+          continue;
+        }
+        result.push({ id: String(block.id ?? newId()), images: [], text });
+        continue;
+      }
+      result.push({ id: String(block?.id ?? newId()), images: [], text: "" });
+    }
+    return result;
   } catch {
     return [];
   }
@@ -48,6 +74,14 @@ function parseBlocks(raw: unknown): DeskBlock[] {
 
 function newId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+}
+
+function appendImage(current: DeskBlock[], dataUrl: string): DeskBlock[] {
+  const last = current[current.length - 1];
+  if (last && last.images.length < MAX_IMAGES) {
+    return current.map((block, i) => (i === current.length - 1 ? { ...block, images: [...block.images, dataUrl] } : block));
+  }
+  return [...current, { id: newId(), images: [dataUrl], text: "" }];
 }
 
 export function DeskPage() {
@@ -67,12 +101,10 @@ export function DeskPage() {
   const [error, setError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // 初始自动选中第一个项目
   useEffect(() => {
     if (selectedId == null && projects.length > 0) setSelectedId(projects[0].id);
   }, [projects, selectedId]);
 
-  // 切换项目时加载内容
   useEffect(() => {
     const project = data.deskProjects.find((item) => item.id === selectedId) ?? null;
     const parsed = parseBlocks(project?.blocks);
@@ -80,7 +112,6 @@ export function DeskPage() {
     setSavedBlocks(project?.blocks ?? "[]");
     setName(project?.name ?? "");
     setSavedName(project?.name ?? "");
-    // 仅在选择变化时加载，避免自动保存刷新后覆盖正在编辑的内容
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const persistProject = useCallback(async () => {
@@ -105,7 +136,7 @@ export function DeskPage() {
     setError("");
     try {
       const dataUrl = await compressImage(file);
-      setBlocks((current) => [...current, { id: newId(), type: "image", data_url: dataUrl, mime_type: "image/jpeg" }]);
+      setBlocks((current) => appendImage(current, dataUrl));
     } catch (cause) {
       setError((cause as Error).message);
     } finally {
@@ -114,11 +145,21 @@ export function DeskPage() {
   }, []);
 
   const addTextBlock = useCallback(() => {
-    setBlocks((current) => [...current, { id: newId(), type: "text", text: "" }]);
+    setBlocks((current) => {
+      const last = current[current.length - 1];
+      if (last && last.images.length === 0 && !last.text.trim()) return current;
+      return [...current, { id: newId(), images: [], text: "" }];
+    });
   }, []);
 
-  const updateTextBlock = useCallback((id: string, text: string) => {
-    setBlocks((current) => current.map((block) => (block.id === id && block.type === "text" ? { ...block, text } : block)));
+  const updateText = useCallback((id: string, text: string) => {
+    setBlocks((current) => current.map((block) => (block.id === id ? { ...block, text } : block)));
+  }, []);
+
+  const removeImage = useCallback((blockId: string, imageIndex: number) => {
+    setBlocks((current) => current
+      .map((block) => (block.id === blockId ? { ...block, images: block.images.filter((_, i) => i !== imageIndex) } : block))
+      .filter((block) => block.images.length > 0 || block.text.trim() !== ""));
   }, []);
 
   const deleteBlock = useCallback((id: string) => {
@@ -169,7 +210,7 @@ export function DeskPage() {
         icon={<ModuleArtwork module="desk" />}
         eyebrow="工作台"
         title="处理台"
-        description="按项目分类，文字与图片穿插记录。"
+        description="按项目分类，图片在左、文字在右，一个板块最多放 4 张图。"
         actions={<Button onClick={() => fileInput.current?.click()} loading={busy}><UploadSimple size={17} />添加图片</Button>}
       />
       <input ref={fileInput} type="file" accept="image/*" multiple hidden onChange={onFiles} />
@@ -196,7 +237,7 @@ export function DeskPage() {
         <section className="desk-content">
           {error ? <div className="field-error">{error}</div> : null}
           {!selectedId ? (
-            <EmptyState title="选择或新建一个项目" description="每个项目是一份独立的工作内容，可穿插记录文字和图片。" />
+            <EmptyState title="选择或新建一个项目" description="每个项目是一份独立的工作内容，图片放左边、文字写右边。" />
           ) : blocks.length === 0 ? (
             <button className="desk-dropzone" onClick={addTextBlock}>
               <TextT size={40} />
@@ -206,13 +247,26 @@ export function DeskPage() {
           ) : (
             <div className="desk-blocks">
               {blocks.map((block, index) => (
-                <div className={classNames("desk-block", `desk-block-${block.type}`)} key={block.id}>
-                  {block.type === "text" ? (
-                    <textarea value={block.text} onChange={(event) => updateTextBlock(block.id, event.target.value)} placeholder="输入文字…" aria-label="文字块" />
-                  ) : (
-                    <button className="desk-block-image" onClick={() => setViewImage(block.data_url)}><img src={block.data_url} alt="图片" loading="lazy" draggable={false} /></button>
-                  )}
-                  <div className="desk-block-tools">
+                <div className="desk-card" key={block.id}>
+                  <div className="desk-card-images">
+                    {block.images.map((src, imageIndex) => (
+                      <div className="desk-card-image" key={imageIndex}>
+                        <img src={src} alt={`图片 ${imageIndex + 1}`} loading="lazy" draggable={false} onClick={() => setViewImage(src)} />
+                        <button className="desk-card-image-del" aria-label="移除这张图片" onClick={() => removeImage(block.id, imageIndex)}>×</button>
+                      </div>
+                    ))}
+                    {block.images.length < MAX_IMAGES ? (
+                      <button className="desk-card-add" onClick={() => fileInput.current?.click()}><ImageSquare size={17} /><span>加图</span></button>
+                    ) : null}
+                  </div>
+                  <textarea
+                    className="desk-card-text"
+                    value={block.text}
+                    onChange={(event) => updateText(block.id, event.target.value)}
+                    placeholder="在图片右侧输入文字…"
+                    aria-label="文字"
+                  />
+                  <div className="desk-card-tools">
                     <IconButton label="上移" onClick={() => moveBlock(index, -1)} disabled={index === 0}><ArrowUp size={14} /></IconButton>
                     <IconButton label="下移" onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1}><ArrowDown size={14} /></IconButton>
                     <IconButton label="删除" onClick={() => deleteBlock(block.id)}><Trash size={14} /></IconButton>
