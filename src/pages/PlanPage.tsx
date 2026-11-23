@@ -365,6 +365,7 @@ export function PlanPage() {
                 <div
                   key={dayIndex}
                   className={classNames("plan-cell", slot && "has-content", isPast && "is-past", retro && "is-retro")}
+                  data-tasks={tasks.length}
                   onClick={() => openCell(dayIndex, rowIndex)}
                   role="button"
                   tabIndex={0}

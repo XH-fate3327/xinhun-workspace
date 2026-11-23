@@ -2082,10 +2082,21 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 .plan-cell.is-past.has-content { opacity: .82; }
 .plan-cell.is-past:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); }
 .plan-cell.is-retro { box-shadow: inset 2px 0 0 var(--accent), inset 0 1px 0 rgba(255, 255, 255, .45); }
-.plan-cell-body { display: grid; gap: 2px; }
-.plan-task-line { display: flex; align-items: flex-start; gap: 4px; font-size: 10.5px; line-height: 1.35; color: var(--text); cursor: pointer; }
+.plan-cell-body { display: grid; gap: 2px; overflow: hidden; }
+.plan-task-line { display: flex; align-items: flex-start; gap: 4px; font-size: 10.5px; line-height: 1.3; color: var(--text); cursor: pointer; }
 .plan-task-line input { margin: 1px 0 0; width: 12px; height: 12px; flex: 0 0 12px; accent-color: var(--accent); }
+.plan-task-line span { flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .plan-task-line span.is-done { text-decoration: line-through; color: var(--text-faint); }
+/* 任务越少，字号越大（1 个任务最大号，依次递减，不超出时间块） */
+.plan-cell[data-tasks="1"] .plan-task-line { font-size: 15px; line-height: 1.32; }
+.plan-cell[data-tasks="1"] .plan-task-line input { width: 15px; height: 15px; flex-basis: 15px; margin-top: 2px; }
+.plan-cell[data-tasks="1"] .plan-task-line span { -webkit-line-clamp: 4; }
+.plan-cell[data-tasks="2"] .plan-task-line { font-size: 13px; }
+.plan-cell[data-tasks="2"] .plan-task-line input { width: 13px; height: 13px; flex-basis: 13px; margin-top: 1.5px; }
+.plan-cell[data-tasks="2"] .plan-task-line span { -webkit-line-clamp: 3; }
+.plan-cell[data-tasks="3"] .plan-task-line { font-size: 11.5px; }
+.plan-cell[data-tasks="4"] .plan-task-line { font-size: 10.5px; }
+.plan-cell[data-tasks="5"] .plan-task-line, .plan-cell[data-tasks="6"] .plan-task-line, .plan-cell[data-tasks="7"] .plan-task-line, .plan-cell[data-tasks="8"] .plan-task-line { font-size: 9.5px; }
 .plan-cell-remark { margin-top: 3px; font-size: 9.5px; color: var(--text-faint); border-left: 2px solid var(--border-strong); padding-left: 4px; }
 .plan-mode-tag { position: absolute; top: 3px; right: 4px; font-size: 8.5px; color: var(--accent-deep); background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
 .plan-lower { display: grid; gap: 12px; }
