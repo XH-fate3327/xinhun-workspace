@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Database, FolderOpen, ShieldCheck, DownloadSimple, ArrowCounterClockwise, Trash, Sun, Moon, Check, Archive, Notebook, Stack, SquaresFour, ImageSquare } from "@phosphor-icons/react";
 import { api } from "../api";
@@ -10,7 +10,6 @@ import { ModuleArtwork } from "../components/ModuleArtwork";
 import { normalizeAppearance } from "../appearance";
 
 const collectionLabels: Record<string, string> = { planItems: "今日计划", quickMemos: "快速备忘", mediaContents: "自媒体", devProjects: "开发项目", devMilestones: "里程碑", devWorkItems: "开发工作项", devLogs: "开发日志", clients: "客户", consultingProjects: "咨询项目", consultingInteractions: "沟通记录", consultingDeliverables: "交付物", consultingFollowups: "咨询跟进", consultingTimeEntries: "咨询时长", workoutTemplates: "训练模板", workoutTemplateExercises: "模板动作", workouts: "训练记录", workoutExercises: "训练动作", workoutSets: "训练组", bodyMetrics: "身体数据", nutritionTargets: "营养目标", foods: "常用食物", meals: "餐食", mealItems: "餐食明细", entertainmentItems: "游戏娱乐", playSessions: "游玩记录", planSlots: "任务计划", planCompletions: "任务完成", calendarNotes: "日历备注", deskProjects: "处理台" };
-const dashboardOptions = [{ value: "plan", label: "任务计划" }, { value: "media", label: "自媒体" }, { value: "development", label: "开发工作" }, { value: "desk", label: "处理台" }];
 
 export function SettingsPage() {
   const { data, run } = useWorkspace();
@@ -21,7 +20,6 @@ export function SettingsPage() {
   const [busy, setBusy] = useState("");
   const [restoreId, setRestoreId] = useState<string | null>(null);
   const [permanent, setPermanent] = useState<{ collection: CollectionName; id: string; title: string } | null>(null);
-  const [dashboardModules, setDashboardModules] = useState<string[] | null>(null);
   const backgroundInput = useRef<HTMLInputElement>(null);
   const saveSetting = (key: string, value: any) => run(() => api.saveSettings({ [key]: value }));
   const toggleAutostart = async (enabled: boolean) => {
@@ -33,7 +31,6 @@ export function SettingsPage() {
       setAutostartBusy(false);
     }
   };
-  useEffect(() => { setDashboardModules(null); }, [data.settings.dashboardModules]);
   const createBackup = async () => { setBusy("backup"); try { await run(() => api.createBackup("手动备份", false)); } finally { setBusy(""); } };
   const exportAll = async () => { setBusy("export"); try { const result = await run(api.exportAll); window.location.href = result.downloadUrl; } finally { setBusy(""); } };
   if (system.isLoading || backups.isLoading || autostart.isLoading) return <><PageHeader icon={<ModuleArtwork module="settings" />} eyebrow="系统" title="数据与设置" description="检查本地数据和备份状态" /><Skeleton lines={8} /></>;
@@ -41,13 +38,6 @@ export function SettingsPage() {
   const status = system.data!;
   const selectedBackup = backups.data?.find((backup) => backup.id === restoreId);
   const appearance = normalizeAppearance(data.settings.appearance);
-  const persistedModules = Array.isArray(data.settings.dashboardModules) ? data.settings.dashboardModules : dashboardOptions.map((option) => option.value);
-  const visibleModules = dashboardModules ?? persistedModules;
-  const toggleDashboardModule = (module: string, checked: boolean) => {
-    const next = checked ? Array.from(new Set([...visibleModules, module])) : visibleModules.filter((value: string) => value !== module);
-    setDashboardModules(next);
-    void saveSetting("dashboardModules", next).catch(() => setDashboardModules(null));
-  };
   const handleBackgroundUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -92,7 +82,6 @@ export function SettingsPage() {
           <div><div><strong>界面主题</strong><small>选择适合长时间使用的明暗风格</small></div><div className="theme-toggle" role="group" aria-label="界面主题"><button className={(data.settings.theme ?? "light") === "light" ? "active" : ""} aria-pressed={(data.settings.theme ?? "light") === "light"} onClick={() => void saveSetting("theme", "light")}><Sun size={16} />浅色</button><button className={data.settings.theme === "dark" ? "active" : ""} aria-pressed={data.settings.theme === "dark"} onClick={() => void saveSetting("theme", "dark")}><Moon size={16} />深色</button></div></div>
           <div><div><strong>背景图片</strong><small>上传一张图作为应用背景，留空则用默认环境</small></div><div className="background-control"><input ref={backgroundInput} type="file" accept="image/*" hidden onChange={handleBackgroundUpload} /><Button variant="secondary" size="sm" onClick={() => backgroundInput.current?.click()}><ImageSquare size={15} />选择图片</Button>{data.settings.background_image ? <Button variant="ghost" size="sm" onClick={clearBackground}><Trash size={15} />恢复默认</Button> : null}</div></div>
           <div><div><strong>开机自启</strong><small>{autostart.data?.supported ? "登录 Windows 时自动启动心魂工作台" : "当前系统不支持"}</small></div><div className="theme-toggle" role="group" aria-label="开机自启"><button className={autostart.data?.enabled ? "active" : ""} aria-pressed={Boolean(autostart.data?.enabled)} disabled={autostartBusy || !autostart.data?.supported} onClick={() => void toggleAutostart(true)}>开启</button><button className={autostart.data && !autostart.data.enabled ? "active" : ""} aria-pressed={Boolean(autostart.data && !autostart.data.enabled)} disabled={autostartBusy || !autostart.data?.supported} onClick={() => void toggleAutostart(false)}>关闭</button></div></div>
-          <fieldset className="dashboard-options"><legend><strong>首页模块摘要</strong><small>选择首页底部需要显示的模块</small></legend><div>{dashboardOptions.map((option) => <label key={option.value}><input type="checkbox" checked={visibleModules.includes(option.value)} onChange={(event) => toggleDashboardModule(option.value, event.target.checked)} />{option.label}</label>)}</div></fieldset>
         </div>
       </Section>
       <Section title="回收站" description="删除记录先进入这里，永久删除需要再次确认">

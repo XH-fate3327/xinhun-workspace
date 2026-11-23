@@ -2121,11 +2121,4 @@ input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px;
 .plan-edit-task input { flex: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); padding: 8px 10px; font: 12px var(--font-ui); }
 .plan-edit-remark { border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); padding: 8px 10px; font: 12px var(--font-ui); }
 .plan-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
-.plan-summary { display: grid; gap: 10px; }
-.plan-summary-title { font-size: 12px; color: var(--text-soft); }
-.plan-summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-.plan-summary-card { display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-glass); background: var(--frosted-bg); -webkit-backdrop-filter: var(--frosted-filter); backdrop-filter: var(--frosted-filter); box-shadow: var(--frosted-sheen); text-decoration: none; color: var(--text); transition: border-color var(--motion-control) ease, transform var(--motion-control) ease; }
-.plan-summary-card strong { font-size: 13px; font-weight: 600; }
-.plan-summary-card span { font-size: 11px; color: var(--text-soft); }
-.plan-summary-card:hover { border-color: var(--accent); transform: translateY(-1px); }
 @media (max-width: 1080px) { .plan-grid { font-size: 9px; } }
