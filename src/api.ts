@@ -53,6 +53,8 @@ export const api = {
   openPath: (path: string) => request<Record<string, any>>("/api/system/open-path", { method: "POST", body: JSON.stringify({ path }) }),
   getIcon: (path: string) => request<{ icon: string }>(`/api/system/icon?path=${encodeURIComponent(path)}`),
   resolveShortcut: (name: string, base64: string) => request<{ path: string; isDirectory?: boolean }>("/api/system/shortcut-target", { method: "POST", body: JSON.stringify({ name, base64 }) }),
+  pickFolder: () => request<{ path: string }>("/api/system/pick-folder", { method: "POST", body: JSON.stringify({}) }),
+  pickFile: () => request<{ path: string }>("/api/system/pick-file", { method: "POST", body: JSON.stringify({}) }),
   backups: () => request<BackupRecord[]>("/api/backups"),
   createBackup: (label = "", keep = false) => request<BackupRecord>("/api/backups", { method: "POST", body: JSON.stringify({ label, keep }) }),
   updateBackup: (id: string, input: { label?: string; keep?: boolean }) => request<BackupRecord>(`/api/backups/${id}/metadata`, { method: "PATCH", body: JSON.stringify(input) }),

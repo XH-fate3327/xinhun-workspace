@@ -176,6 +176,38 @@ export function LauncherPage() {
     }
   };
 
+  const fillFromPath = (target: string) => {
+    const base = target.split(/[\\/]/).filter(Boolean).pop() ?? target;
+    const name = base.replace(/\.(exe|lnk|url|bat|cmd)$/i, "");
+    setDraft((current) => (current ? { ...current, path: target, name: current.name.trim() ? current.name : name } : current));
+  };
+
+  const pickFolderPath = async () => {
+    if (!draft) return;
+    setBusy(true); setError("");
+    try {
+      const result = await api.pickFolder();
+      if (result.path) fillFromPath(result.path);
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pickFilePath = async () => {
+    if (!draft) return;
+    setBusy(true); setError("");
+    try {
+      const result = await api.pickFile();
+      if (result.path) fillFromPath(result.path);
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onIconFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -191,22 +223,43 @@ export function LauncherPage() {
   const onDropFiles = async (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files || []);
-    if (files.length === 0) return;
     setBusy(true); setError("");
     try {
-      for (const file of files) {
-        if (/\.(lnk|url)$/i.test(file.name)) {
-          const base64 = await fileToBase64(file);
-          const result = await api.resolveShortcut(file.name, base64);
-          if (result.path) {
-            await addItemFromPath(file.name.replace(/\.(lnk|url)$/i, ""), result.path, Boolean(result.isDirectory));
+      if (files.length > 0) {
+        for (const file of files) {
+          if (/\.(lnk|url)$/i.test(file.name)) {
+            const base64 = await fileToBase64(file);
+            const result = await api.resolveShortcut(file.name, base64);
+            if (result.path) {
+              await addItemFromPath(file.name.replace(/\.(lnk|url)$/i, ""), result.path, Boolean(result.isDirectory));
+            } else {
+              setError("无法解析这个快捷方式的目标路径");
+            }
           } else {
-            setError("无法解析这个快捷方式的目标路径");
+            setError("浏览器无法直接拿到文件/文件夹路径，请拖入 .lnk 快捷方式，或点右上角手动填写路径。");
           }
-        } else {
-          setError("浏览器无法直接拿到文件/文件夹路径，请拖入 .lnk 快捷方式，或点右上角手动填写路径。");
+        }
+        return;
+      }
+      // 文件夹拖拽时浏览器可能不给 files，只能看文本 / file:// 路径
+      const candidates = [event.dataTransfer.getData("text/plain"), event.dataTransfer.getData("text/uri-list")].map((value) => value.trim()).filter(Boolean);
+      for (const candidate of candidates) {
+        let target = candidate;
+        if (candidate.startsWith("file://")) {
+          try {
+            target = decodeURIComponent(new URL(candidate).pathname);
+          } catch {
+            continue;
+          }
+        }
+        target = target.replace(/^\/([a-zA-Z]:[\\/])/, "$1").trim();
+        if (/^[a-zA-Z]:[\\/]|^\\\\|^\//.test(target)) {
+          const name = target.split(/[\\/]/).filter(Boolean).pop() ?? target;
+          await addItemFromPath(name, target);
+          return;
         }
       }
+      setError("没有读到可用的路径：请拖 .lnk 快捷方式，或点右上角手动填写文件夹路径。");
     } catch (cause) {
       setError((cause as Error).message);
     } finally {
@@ -309,7 +362,13 @@ export function LauncherPage() {
         <Modal open onClose={() => setDraft(null)} title={draft.id ? "编辑快捷方式" : "添加快捷方式"}>
           <div className="launcher-form">
             <label className="launcher-field"><span>名称</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="例如：微信 / 我的项目文件夹" /></label>
-            <label className="launcher-field"><span>路径</span><input value={draft.path} onChange={(event) => setDraft({ ...draft, path: event.target.value })} placeholder="C:\Windows\notepad.exe 或 D:\工作\项目" /></label>
+            <label className="launcher-field"><span>路径</span>
+              <div className="launcher-path-row">
+                <input value={draft.path} onChange={(event) => setDraft({ ...draft, path: event.target.value })} placeholder="C:\Windows\notepad.exe 或 D:\工作\项目" />
+                <Button variant="secondary" size="sm" loading={busy} onClick={() => void pickFolderPath()}>选文件夹</Button>
+                <Button variant="secondary" size="sm" loading={busy} onClick={() => void pickFilePath()}>选文件</Button>
+              </div>
+            </label>
             <label className="launcher-field"><span>分类夹</span>
               <select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })}>
                 <option value="">未分类</option>

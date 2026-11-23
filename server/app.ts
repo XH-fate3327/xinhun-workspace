@@ -3,7 +3,7 @@ import fastifyStatic from "@fastify/static";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawn, execFileSync } from "node:child_process";
+import { spawn, execFile, execFileSync } from "node:child_process";
 import { z } from "zod";
 import { getAppPaths, type AppPaths } from "./config.js";
 import { DatabaseManager } from "./database.js";
@@ -256,6 +256,39 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     } catch {
       return { data: { icon: "" } };
     }
+  });
+
+  // 原生「选择文件夹 / 选择文件」对话框（浏览器拿不到本地路径时用）
+  app.post("/api/system/pick-folder", async () => {
+    if (process.platform !== "win32") return { data: { path: "" } };
+    const script = [
+      "Add-Type -AssemblyName System.Windows.Forms",
+      "$d = New-Object System.Windows.Forms.FolderBrowserDialog",
+      "$d.Description = '选择要添加的文件夹'",
+      "$d.ShowNewFolderButton = $false",
+      "$r = $d.ShowDialog()",
+      "if ($r -eq [System.Windows.Forms.DialogResult]::OK) { $d.SelectedPath }",
+    ].join("; ");
+    const path = await new Promise<string>((resolve) => {
+      execFile("powershell", ["-NoProfile", "-STA", "-Command", script], { encoding: "utf8", windowsHide: true, timeout: 180000 }, (error, stdout) => resolve(error ? "" : String(stdout).trim()));
+    });
+    return { data: { path } };
+  });
+
+  app.post("/api/system/pick-file", async () => {
+    if (process.platform !== "win32") return { data: { path: "" } };
+    const script = [
+      "Add-Type -AssemblyName System.Windows.Forms",
+      "$d = New-Object System.Windows.Forms.OpenFileDialog",
+      "$d.Title = '选择程序或文件'",
+      "$d.Filter = '程序 (*.exe)|*.exe|所有文件 (*.*)|*.*'",
+      "$r = $d.ShowDialog()",
+      "if ($r -eq [System.Windows.Forms.DialogResult]::OK) { $d.FileName }",
+    ].join("; ");
+    const path = await new Promise<string>((resolve) => {
+      execFile("powershell", ["-NoProfile", "-STA", "-Command", script], { encoding: "utf8", windowsHide: true, timeout: 180000 }, (error, stdout) => resolve(error ? "" : String(stdout).trim()));
+    });
+    return { data: { path } };
   });
 
   app.get("/api/system/autostart", async () => ({ data: readAutostart(paths.root) }));
