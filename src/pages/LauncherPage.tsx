@@ -8,7 +8,8 @@ import { ModuleArtwork } from "../components/ModuleArtwork";
 import { useModuleLabel } from "../useModuleLabel";
 import type { Entity } from "../types";
 
-type LauncherDraft = { id?: string; name: string; path: string; icon: string };
+type LauncherDraft = { id?: string; name: string; path: string; icon: string; category: string };
+type Category = { id: string; name: string };
 
 function kindOf(path: string): "folder" | "exe" | "file" {
   const value = path.trim();
@@ -40,6 +41,14 @@ async function compressIcon(file: Blob): Promise<string> {
   }
 }
 
+async function fileToBase64(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
 export function LauncherPage() {
   const { data, run } = useWorkspace();
   const moduleLabel = useModuleLabel("启动台");
@@ -48,6 +57,11 @@ export function LauncherPage() {
     const value = data.settings.launcherOrder;
     return Array.isArray(value) ? (value as string[]) : [];
   }, [data.settings.launcherOrder]);
+  const categories = useMemo<Category[]>(() => {
+    const value = data.settings.launcherCategories;
+    return Array.isArray(value) ? (value as Category[]) : [];
+  }, [data.settings.launcherCategories]);
+
   const sorted = useMemo(() => {
     const byId = new Map(items.map((item) => [item.id, item]));
     const ordered = order.map((id) => byId.get(id)).filter((item): item is Entity => Boolean(item));
@@ -55,7 +69,14 @@ export function LauncherPage() {
     return [...ordered, ...rest];
   }, [items, order]);
 
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const visible = useMemo(() => {
+    if (activeCategory === "all") return sorted;
+    return sorted.filter((item) => String(item.category ?? "") === activeCategory);
+  }, [sorted, activeCategory]);
+
   const [draft, setDraft] = useState<LauncherDraft | null>(null);
+  const [categoryDraft, setCategoryDraft] = useState<{ id?: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -74,6 +95,13 @@ export function LauncherPage() {
     await run(() => api.saveSettings({ launcherOrder: next.map((item) => item.id) }));
   }, [run]);
 
+  const addItemFromPath = async (name: string, target: string) => {
+    let icon = "";
+    try { icon = (await api.getIcon(target)).icon; } catch { icon = ""; }
+    const created = await run(() => api.create("launcherItems", { name, path: target, icon, kind: kindOf(target), category: activeCategory === "all" ? "" : activeCategory }));
+    await run(() => api.saveSettings({ launcherOrder: [...order, created.id] }));
+  };
+
   const saveDraft = async () => {
     if (!draft) return;
     const name = draft.name.trim();
@@ -83,9 +111,9 @@ export function LauncherPage() {
     try {
       const kind = kindOf(target);
       if (draft.id) {
-        await run(() => api.update("launcherItems", draft.id!, { name, path: target, icon: draft.icon, kind }));
+        await run(() => api.update("launcherItems", draft.id!, { name, path: target, icon: draft.icon, kind, category: draft.category }));
       } else {
-        const created = await run(() => api.create("launcherItems", { name, path: target, icon: draft.icon, kind }));
+        const created = await run(() => api.create("launcherItems", { name, path: target, icon: draft.icon, kind, category: draft.category }));
         await run(() => api.saveSettings({ launcherOrder: [...order, created.id] }));
       }
       setDraft(null);
@@ -94,6 +122,26 @@ export function LauncherPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const saveCategory = async () => {
+    if (!categoryDraft) return;
+    const name = categoryDraft.name.trim();
+    if (!name) { setError("分类夹要有个名字"); return; }
+    const next = categoryDraft.id
+      ? categories.map((category) => (category.id === categoryDraft.id ? { ...category, name } : category))
+      : [...categories, { id: (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2)), name }];
+    await run(() => api.saveSettings({ launcherCategories: next }));
+    setCategoryDraft(null);
+  };
+
+  const removeCategory = async (id: string) => {
+    const next = categories.filter((category) => category.id !== id);
+    await run(() => api.saveSettings({ launcherCategories: next }));
+    for (const item of items.filter((entry) => String(entry.category ?? "") === id)) {
+      await run(() => api.update("launcherItems", item.id, { category: "" }));
+    }
+    if (activeCategory === id) setActiveCategory("all");
   };
 
   const autoIcon = async () => {
@@ -124,34 +172,82 @@ export function LauncherPage() {
     }
   };
 
-  const onDrop = (index: number) => async (event: DragEvent) => {
+  const onDropFiles = async (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer.files || []);
+    if (files.length === 0) return;
+    setBusy(true); setError("");
+    try {
+      for (const file of files) {
+        if (/\.(lnk|url)$/i.test(file.name)) {
+          const base64 = await fileToBase64(file);
+          const result = await api.resolveShortcut(file.name, base64);
+          if (result.path) {
+            await addItemFromPath(file.name.replace(/\.(lnk|url)$/i, ""), result.path);
+          } else {
+            setError("无法解析这个快捷方式的目标路径");
+          }
+        } else {
+          setError("浏览器无法直接拿到文件/文件夹路径，请拖入 .lnk 快捷方式，或点右上角手动填写路径。");
+        }
+      }
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onReorder = (index: number) => async (event: DragEvent) => {
     event.preventDefault();
     if (dragIndex !== null && dragIndex !== index) {
-      const next = [...sorted];
-      const [moved] = next.splice(dragIndex, 1);
-      next.splice(index, 0, moved);
-      await saveOrder(next);
+      const visibleIds = visible.map((item) => item.id);
+      const [movedId] = visibleIds.splice(dragIndex, 1);
+      visibleIds.splice(index, 0, movedId);
+      let cursor = 0;
+      const nextOrder = sorted.map((item) => (visibleIds.includes(item.id) ? visibleIds[cursor++] : item.id));
+      const byId = new Map(sorted.map((item) => [item.id, item]));
+      await saveOrder(nextOrder.map((id) => byId.get(id)).filter((item): item is Entity => Boolean(item)));
     }
     setDragIndex(null);
     setOverIndex(null);
   };
 
   return (
-    <div className="launcher-page">
+    <div className="launcher-page" onDragOver={(event) => event.preventDefault()} onDrop={(event) => void onDropFiles(event)}>
       <PageHeader
         icon={<ModuleArtwork module="launcher" />}
         eyebrow="工作"
         title={moduleLabel}
-        description="把常用软件、文件夹放进来，一键快速打开；图标可自动取、也可自定义。"
-        actions={<Button onClick={() => setDraft({ name: "", path: "", icon: "" })}><Plus size={17} />添加快捷方式</Button>}
+        description="把常用软件、文件夹放进来，一键快速打开；也可以拖动 .lnk 快捷方式直接添加。"
+        actions={<Button onClick={() => setDraft({ name: "", path: "", icon: "", category: activeCategory === "all" ? "" : activeCategory })}><Plus size={17} />添加快捷方式</Button>}
       />
       <input ref={iconInput} type="file" accept="image/*" hidden onChange={onIconFile} />
       {error ? <div className="field-error">{error}</div> : null}
-      {items.length === 0 ? (
-        <EmptyState title="启动台还是空的" description="点右上角「添加快捷方式」，填入软件路径或文件夹路径即可。" />
+
+      <div className="launcher-categories">
+        <button className={classNames("launcher-category", activeCategory === "all" && "active")} onClick={() => setActiveCategory("all")}>
+          <strong>全部</strong><small>{items.length}</small>
+        </button>
+        {categories.map((category) => (
+          <div key={category.id} className={classNames("launcher-category", activeCategory === category.id && "active")}>
+            <button className="launcher-category-main" onClick={() => setActiveCategory(category.id)}>
+              <strong>{category.name}</strong><small>{items.filter((item) => String(item.category ?? "") === category.id).length}</small>
+            </button>
+            <span className="launcher-category-tools">
+              <IconButton label="重命名分类夹" onClick={() => setCategoryDraft({ id: category.id, name: category.name })}><PencilSimple size={13} /></IconButton>
+              <IconButton label="删除分类夹" onClick={() => void removeCategory(category.id)}><Trash size={13} /></IconButton>
+            </span>
+          </div>
+        ))}
+        <button className="launcher-category launcher-category-add" onClick={() => setCategoryDraft({ name: "" })}><Plus size={15} />新建分类夹</button>
+      </div>
+
+      {visible.length === 0 ? (
+        <EmptyState title="这里还没有快捷方式" description="点右上角「添加快捷方式」，或把桌面的 .lnk 快捷方式直接拖进来。" />
       ) : (
         <div className="launcher-grid">
-          {sorted.map((item, index) => {
+          {visible.map((item, index) => {
             const kind = String(item.kind ?? kindOf(String(item.path ?? "")));
             return (
               <div
@@ -160,7 +256,7 @@ export function LauncherPage() {
                 draggable
                 onDragStart={() => setDragIndex(index)}
                 onDragOver={(event) => { event.preventDefault(); setOverIndex(index); }}
-                onDrop={(event) => void onDrop(index)(event)}
+                onDrop={(event) => void onReorder(index)(event)}
                 onDragEnd={() => { setDragIndex(null); setOverIndex(null); }}
               >
                 <button className="launcher-open" onClick={() => void openItem(item)} title={String(item.path ?? "")}>
@@ -170,7 +266,7 @@ export function LauncherPage() {
                   <span className="launcher-name">{String(item.name ?? "")}</span>
                 </button>
                 <div className="launcher-tools">
-                  <IconButton label="编辑" onClick={() => setDraft({ id: item.id, name: String(item.name ?? ""), path: String(item.path ?? ""), icon: String(item.icon ?? "") })}><PencilSimple size={14} /></IconButton>
+                  <IconButton label="编辑" onClick={() => setDraft({ id: item.id, name: String(item.name ?? ""), path: String(item.path ?? ""), icon: String(item.icon ?? ""), category: String(item.category ?? "") })}><PencilSimple size={14} /></IconButton>
                   <IconButton label="删除" onClick={() => void run(() => api.remove("launcherItems", item.id))}><Trash size={14} /></IconButton>
                 </div>
               </div>
@@ -184,6 +280,12 @@ export function LauncherPage() {
           <div className="launcher-form">
             <label className="launcher-field"><span>名称</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="例如：微信 / 我的项目文件夹" /></label>
             <label className="launcher-field"><span>路径</span><input value={draft.path} onChange={(event) => setDraft({ ...draft, path: event.target.value })} placeholder="C:\Windows\notepad.exe 或 D:\工作\项目" /></label>
+            <label className="launcher-field"><span>分类夹</span>
+              <select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })}>
+                <option value="">未分类</option>
+                {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+            </label>
             <div className="launcher-icon-row">
               <div className="launcher-icon-preview">{draft.icon ? <img src={draft.icon} alt="" /> : <AppWindow size={30} />}</div>
               <Button variant="secondary" size="sm" loading={busy} onClick={() => void autoIcon()}>自动取图标</Button>
@@ -194,6 +296,18 @@ export function LauncherPage() {
             <div className="launcher-form-actions">
               <Button variant="secondary" onClick={() => setDraft(null)}>取消</Button>
               <Button loading={busy} onClick={() => void saveDraft()}>保存</Button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+
+      {categoryDraft ? (
+        <Modal open onClose={() => setCategoryDraft(null)} title={categoryDraft.id ? "重命名分类夹" : "新建分类夹"}>
+          <div className="launcher-form">
+            <label className="launcher-field"><span>分类夹名称</span><input autoFocus value={categoryDraft.name} onChange={(event) => setCategoryDraft({ ...categoryDraft, name: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") void saveCategory(); }} placeholder="例如：游戏 / 工作工具" /></label>
+            <div className="launcher-form-actions">
+              <Button variant="secondary" onClick={() => setCategoryDraft(null)}>取消</Button>
+              <Button onClick={() => void saveCategory()}>保存</Button>
             </div>
           </div>
         </Modal>

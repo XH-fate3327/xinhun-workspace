@@ -60,7 +60,7 @@ export const collectionDefinitions = {
     title: "name",
     module: "launcher",
     required: ["name", "path"],
-    fields: ["name", "path", "icon", "kind"],
+    fields: ["name", "path", "icon", "kind", "category"],
     search: ["name", "path"],
   },
   clients: {

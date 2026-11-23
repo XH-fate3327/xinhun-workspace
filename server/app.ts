@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyStatic from "@fastify/static";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { spawn, execFileSync } from "node:child_process";
 import { z } from "zod";
@@ -262,6 +263,28 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     const body = z.object({ enabled: z.boolean() }).parse(request.body ?? {});
     setAutostart(paths.root, body.enabled);
     return { data: readAutostart(paths.root) };
+  });
+
+  // 解析 .lnk / .url 快捷方式的目标路径（拖动快捷方式到启动台时用）
+  app.post("/api/system/shortcut-target", async (request) => {
+    const body = z.object({ name: z.string().min(1), base64: z.string().min(1) }).parse(request.body ?? {});
+    if (process.platform !== "win32") return { data: { path: "" } };
+    const temp = path.join(os.tmpdir(), `xinhun-${Date.now()}-${path.basename(body.name)}`);
+    try {
+      fs.writeFileSync(temp, Buffer.from(body.base64, "base64"));
+      if (/\.url$/i.test(body.name)) {
+        const text = fs.readFileSync(temp, "utf8");
+        const match = text.match(/^\s*URL\s*=\s*(.+)$/im);
+        return { data: { path: match ? match[1].trim() : "" } };
+      }
+      const script = `(New-Object -ComObject WScript.Shell).CreateShortcut('${temp.replace(/'/g, "''")}').TargetPath`;
+      const out = execFileSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], { encoding: "utf8", windowsHide: true, timeout: 8000 });
+      return { data: { path: out.trim() } };
+    } catch {
+      return { data: { path: "" } };
+    } finally {
+      try { fs.unlinkSync(temp); } catch { /* ignore */ }
+    }
   });
 
   app.get("/api/backups", async () => ({ data: backups.list() }));
