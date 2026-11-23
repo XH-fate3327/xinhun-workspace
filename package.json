@@ -1,7 +1,9 @@
 {
-  "name": "my-own-app",
-  "version": "0.1.0",
+  "name": "xinhun-workspace",
+  "version": "1.0.0",
+  "description": "心魂工作台 · 本地个人工作台（任务计划 / 记录台 / 启动台 / 自媒体 / 数据与设置）",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.13.0"
