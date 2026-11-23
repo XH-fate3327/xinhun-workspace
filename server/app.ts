@@ -258,10 +258,35 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     }
   });
 
+  // 按名字在常见位置反查路径（浏览器拖入文件夹/文件时拿不到完整路径）
+  app.get("/api/system/find-path", async (request) => {
+    const query = request.query as { name?: string };
+    const name = String(query.name ?? "").trim();
+    if (!name || name.includes("\\") || name.includes("/")) return { data: { path: "" } };
+    const home = os.homedir();
+    const roots = [
+      path.join(home, "Desktop"),
+      path.join(home, "OneDrive", "Desktop"),
+      path.join(home, "OneDrive", "桌面"),
+      path.join(home, "Documents"),
+      path.join(home, "Downloads"),
+      home,
+      "D:\\",
+    ];
+    for (const root of roots) {
+      const candidate = path.join(root, name);
+      try {
+        if (fs.existsSync(candidate)) return { data: { path: candidate } };
+      } catch { /* ignore */ }
+    }
+    return { data: { path: "" } };
+  });
+
   // 原生「选择文件夹 / 选择文件」对话框（浏览器拿不到本地路径时用）
   app.post("/api/system/pick-folder", async () => {
     if (process.platform !== "win32") return { data: { path: "" } };
     const script = [
+      "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
       "Add-Type -AssemblyName System.Windows.Forms",
       "$d = New-Object System.Windows.Forms.FolderBrowserDialog",
       "$d.Description = '选择要添加的文件夹'",
@@ -278,6 +303,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.post("/api/system/pick-file", async () => {
     if (process.platform !== "win32") return { data: { path: "" } };
     const script = [
+      "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
       "Add-Type -AssemblyName System.Windows.Forms",
       "$d = New-Object System.Windows.Forms.OpenFileDialog",
       "$d.Title = '选择程序或文件'",
@@ -310,7 +336,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         const match = text.match(/^\s*URL\s*=\s*(.+)$/im);
         return { data: { path: match ? match[1].trim() : "" } };
       }
-      const script = `(New-Object -ComObject WScript.Shell).CreateShortcut('${temp.replace(/'/g, "''")}').TargetPath`;
+      const script = `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; (New-Object -ComObject WScript.Shell).CreateShortcut('${temp.replace(/'/g, "''")}').TargetPath`;
       const out = execFileSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], { encoding: "utf8", windowsHide: true, timeout: 8000 });
       const target = out.trim();
       let isDirectory = false;

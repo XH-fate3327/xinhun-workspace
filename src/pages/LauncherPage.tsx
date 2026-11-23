@@ -223,8 +223,27 @@ export function LauncherPage() {
   const onDropFiles = async (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files || []);
+    const entries = Array.from(event.dataTransfer.items || [])
+      .map((item) => {
+        try {
+          return item.webkitGetAsEntry?.() ?? null;
+        } catch {
+          return null;
+        }
+      })
+      .filter((entry): entry is FileSystemEntry => Boolean(entry));
+    const folderNames = entries.filter((entry) => entry.isDirectory).map((entry) => entry.name);
     setBusy(true); setError("");
     try {
+      // 拖入文件夹：浏览器只给名字，服务端按名字在桌面/文档/下载里反查路径
+      if (folderNames.length > 0) {
+        for (const name of folderNames) {
+          const result = await api.findPath(name);
+          if (result.path) await addItemFromPath(name, result.path, true);
+          else setError(`没在桌面 / 文档 / 下载里找到「${name}」，请点「选文件夹」手动选一次`);
+        }
+        return;
+      }
       if (files.length > 0) {
         for (const file of files) {
           if (/\.(lnk|url)$/i.test(file.name)) {
@@ -236,12 +255,13 @@ export function LauncherPage() {
               setError("无法解析这个快捷方式的目标路径");
             }
           } else {
-            setError("浏览器无法直接拿到文件/文件夹路径，请拖入 .lnk 快捷方式，或点右上角手动填写路径。");
+            const found = await api.findPath(file.name);
+            if (found.path) await addItemFromPath(file.name, found.path);
+            else setError(`没在桌面 / 文档 / 下载里找到「${file.name}」，请点「选文件」手动选一次`);
           }
         }
         return;
       }
-      // 文件夹拖拽时浏览器可能不给 files，只能看文本 / file:// 路径
       const candidates = [event.dataTransfer.getData("text/plain"), event.dataTransfer.getData("text/uri-list")].map((value) => value.trim()).filter(Boolean);
       for (const candidate of candidates) {
         let target = candidate;
@@ -259,7 +279,7 @@ export function LauncherPage() {
           return;
         }
       }
-      setError("没有读到可用的路径：请拖 .lnk 快捷方式，或点右上角手动填写文件夹路径。");
+      setError("没有读到可用的路径：请拖 .lnk 快捷方式、拖桌面上的文件夹，或点「选文件夹」。");
     } catch (cause) {
       setError((cause as Error).message);
     } finally {
