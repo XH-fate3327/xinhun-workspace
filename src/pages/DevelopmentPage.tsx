@@ -6,6 +6,7 @@ import { useWorkspace } from "../WorkspaceContext";
 import { formatDate, localDate, classNames } from "../utils";
 import { Badge, Button, EmptyState, EntityForm, Modal, PageHeader, Section, type FieldDefinition } from "../components/ui";
 import { ModuleArtwork } from "../components/ModuleArtwork";
+import { useModuleLabel } from "../useModuleLabel";
 
 const projectFields: FieldDefinition[] = [
   { name: "name", label: "项目名称", required: true },
@@ -18,6 +19,7 @@ const projectFields: FieldDefinition[] = [
 
 export function DevelopmentPage() {
   const { data, run } = useWorkspace();
+  const moduleLabel = useModuleLabel("开发工作");
   const [params, setParams] = useSearchParams();
   const [projectId, setProjectId] = useState<string | null>(data.devProjects[0]?.id ?? null);
   const [dialog, setDialog] = useState<{ type: string; item?: Record<string, any> } | null>(null);
@@ -31,7 +33,7 @@ export function DevelopmentPage() {
   const logs = data.devLogs.filter((item) => item.project_id === projectId);
   return (
     <div>
-      <PageHeader icon={<ModuleArtwork module="development" />} eyebrow="项目与技术记录" title="开发工作" description="项目、里程碑、功能、Bug 和开发日志各归其位。" actions={<><Button variant="secondary" onClick={() => setDialog({ type: "project" })}><Plus size={17} />新建项目</Button>{project ? <Button onClick={() => setDialog({ type: "work" })}><Plus size={17} />添加工作项</Button> : null}</>} />
+      <PageHeader icon={<ModuleArtwork module="development" />} eyebrow="项目与技术记录" title={moduleLabel} description="项目、里程碑、功能、Bug 和开发日志各归其位。" actions={<><Button variant="secondary" onClick={() => setDialog({ type: "project" })}><Plus size={17} />新建项目</Button>{project ? <Button onClick={() => setDialog({ type: "work" })}><Plus size={17} />添加工作项</Button> : null}</>} />
       {data.devProjects.length === 0 ? <EmptyState title="还没有开发项目" description="建立项目后再添加里程碑、工作项和日志。" action={<Button onClick={() => setDialog({ type: "project" })}>建立第一个项目</Button>} /> : <div className="workspace-split">
         <aside className="project-rail"><span className="rail-label">项目</span>{data.devProjects.map((item) => <button key={item.id} className={projectId === item.id ? "active" : ""} onClick={() => setProjectId(item.id)}><div><strong>{item.name}</strong><small>{item.description || "没有项目说明"}</small></div><Badge tone={item.status === "active" ? "success" : "neutral"}>{item.status === "active" ? "进行中" : item.status === "completed" ? "已完成" : "暂停"}</Badge></button>)}</aside>
         <div className="workspace-detail">

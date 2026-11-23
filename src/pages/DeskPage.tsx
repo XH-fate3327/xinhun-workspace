@@ -5,6 +5,7 @@ import { useWorkspace } from "../WorkspaceContext";
 import { classNames } from "../utils";
 import { Button, EmptyState, IconButton, Modal, PageHeader } from "../components/ui";
 import { ModuleArtwork } from "../components/ModuleArtwork";
+import { useModuleLabel } from "../useModuleLabel";
 
 // 一个块 = 左侧图片区（最多 4 张）+ 右侧文字
 type DeskBlock = { id: string; images: string[]; text: string };
@@ -94,6 +95,7 @@ function addImageToBlock(current: DeskBlock[], targetId: string | null, dataUrl:
 
 export function DeskPage() {
   const { data, run, registerSaveHandler } = useWorkspace();
+  const moduleLabel = useModuleLabel("处理台");
   const projects = useMemo(
     () => [...data.deskProjects].sort((a, b) => String(b.updated_at ?? "").localeCompare(String(a.updated_at ?? ""))),
     [data.deskProjects],
@@ -229,7 +231,7 @@ export function DeskPage() {
       <PageHeader
         icon={<ModuleArtwork module="desk" />}
         eyebrow="工作台"
-        title="处理台"
+        title={moduleLabel}
         description="按项目分类，图片在左、文字在右，一个板块最多放 4 张图。"
         actions={<Button onClick={() => { pendingTargetRef.current = null; fileInput.current?.click(); }} loading={busy}><UploadSimple size={17} />添加图片</Button>}
       />

@@ -6,6 +6,7 @@ import { classNames } from "../utils";
 import { Button, IconButton, Modal, PageHeader } from "../components/ui";
 import { ModuleArtwork } from "../components/ModuleArtwork";
 import { holidayOf, solarTermOf } from "../data/holidays";
+import { useModuleLabel } from "../useModuleLabel";
 import type { Entity } from "../types";
 
 const DAY_NAMES = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -126,6 +127,7 @@ function modeLabel(mode: string, startWeek: string, endWeek: string): string {
 
 export function PlanPage() {
   const { data, run } = useWorkspace();
+  const moduleLabel = useModuleLabel("任务计划");
   const thisWeek = useMemo(() => mondayOf(new Date()), []);
   const [weekKey, setWeekKey] = useState<string>(thisWeek);
   const [editing, setEditing] = useState<{ day: number; row: number } | null>(null);
@@ -303,7 +305,7 @@ export function PlanPage() {
       <PageHeader
         icon={<ModuleArtwork module="plan" />}
         eyebrow="日常"
-        title="任务计划"
+        title={moduleLabel}
         description="一周七天的课表式任务安排，支持全局 / 本周 / 自定义周期三种编辑模式。"
         actions={<Button variant="secondary" onClick={() => setWeekKey(thisWeek)}><CaretLeft size={15} />回到本周</Button>}
       />

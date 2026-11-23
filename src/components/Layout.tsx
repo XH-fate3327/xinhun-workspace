@@ -56,6 +56,23 @@ export function AppLayout() {
 
   // 侧边栏顺序：可拖动排序，结果存 settings.navOrder（分组名 → 路由数组）
   const navOrder = (data.settings.navOrder as Record<string, string[]> | undefined) ?? {};
+  // 自定义导航名称：右键重命名，存 settings.navLabels（路由 → 名称）
+  const navLabels = (data.settings.navLabels as Record<string, string> | undefined) ?? {};
+  const [renameTarget, setRenameTarget] = useState<{ to: string; label: string } | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const openRename = (to: string, label: string) => {
+    setRenameTarget({ to, label });
+    setRenameValue(label);
+  };
+  const saveRename = async () => {
+    if (!renameTarget) return;
+    const value = renameValue.trim();
+    const next: Record<string, string> = { ...navLabels };
+    if (value && value !== renameTarget.label) next[renameTarget.to] = value;
+    else delete next[renameTarget.to];
+    await run(() => api.saveSettings({ navLabels: next }));
+    setRenameTarget(null);
+  };
   const groups = baseGroups.map((group) => {
     const order = navOrder[group.label];
     if (!order || order.length === 0) return group;
@@ -178,23 +195,27 @@ export function AppLayout() {
           {groups.map((group) => (
             <div className="nav-group" key={group.label}>
               <span className="nav-label">{group.label}</span>
-              {group.links.map(({ to, label, module, tone }, index) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={to === "/"}
-                  data-tone={tone}
-                  draggable
-                  onDragStart={onNavDragStart(group.label, index)}
-                  onDragOver={onNavDragOver(group.label, index)}
-                  onDrop={onNavDrop(group.label, index)}
-                  onDragEnd={onNavDragEnd}
-                  className={({ isActive }) => classNames("nav-link", isActive && "active", dragInfo?.group === group.label && dragInfo.from === index && "nav-dragging", dropAt?.group === group.label && dropAt.index === index && "nav-drop-target")}
-                  title={`${label}（拖动可排序）`}
-                >
-                  {appearance === "neo" ? <NeoModuleEmblem module={module} /> : <ModuleArtwork module={module} />}<span>{label}</span>
-                </NavLink>
-              ))}
+              {group.links.map(({ to, label, module, tone }, index) => {
+                const displayLabel = navLabels[to] ?? label;
+                return (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={to === "/"}
+                    data-tone={tone}
+                    draggable
+                    onDragStart={onNavDragStart(group.label, index)}
+                    onDragOver={onNavDragOver(group.label, index)}
+                    onDrop={onNavDrop(group.label, index)}
+                    onDragEnd={onNavDragEnd}
+                    onContextMenu={(event) => { event.preventDefault(); openRename(to, displayLabel); }}
+                    className={({ isActive }) => classNames("nav-link", isActive && "active", dragInfo?.group === group.label && dragInfo.from === index && "nav-dragging", dropAt?.group === group.label && dropAt.index === index && "nav-drop-target")}
+                    title={`${displayLabel}（右键重命名 / 拖动排序）`}
+                  >
+                    {appearance === "neo" ? <NeoModuleEmblem module={module} /> : <ModuleArtwork module={module} />}<span>{displayLabel}</span>
+                  </NavLink>
+                );
+              })}
             </div>
           ))}
         </nav>
@@ -207,7 +228,7 @@ export function AppLayout() {
           <div className="topbar-left">
             <IconButton label={collapsed ? "展开导航" : "收起导航"} onClick={() => setCollapsed((value) => !value)}><SidebarSimple size={20} /></IconButton>
             <span className="toolbar-page-icon" data-tone={currentPage.tone} aria-hidden="true"><ModuleArtwork module={currentPage.module} /></span>
-            <div className="toolbar-context"><strong>{currentPage.label}</strong><span>{new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date())}</span></div>
+            <div className="toolbar-context"><strong>{navLabels[location.pathname] ?? currentPage.label}</strong><span>{new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date())}</span></div>
             {appearance === "neo" ? <span className="topbar-index">{currentPage.index} / 04</span> : null}
           </div>
           <div className="topbar-actions">
@@ -221,6 +242,22 @@ export function AppLayout() {
       </div>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       <QuickCreateModal open={quickOpen} onClose={() => setQuickOpen(false)} />
+      <Modal open={Boolean(renameTarget)} onClose={() => setRenameTarget(null)} title="重命名导航">
+        <div className="rename-panel">
+          <input
+            autoFocus
+            value={renameValue}
+            onChange={(event) => setRenameValue(event.target.value)}
+            onKeyDown={(event) => { if (event.key === "Enter") void saveRename(); if (event.key === "Escape") setRenameTarget(null); }}
+            placeholder="输入新的名称"
+            aria-label="导航名称"
+          />
+          <div className="rename-actions">
+            <Button variant="secondary" onClick={() => setRenameTarget(null)}>取消</Button>
+            <Button onClick={() => void saveRename()}>保存</Button>
+          </div>
+        </div>
+      </Modal>
       {exitState === "done" ? <ExitScreen /> : null}
     </div>
   );

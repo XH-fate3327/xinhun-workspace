@@ -7,12 +7,14 @@ import type { CollectionName } from "../types";
 import { formatBytes, formatDateTime } from "../utils";
 import { Badge, Button, ConfirmDialog, EmptyState, ErrorState, PageHeader, Section, Skeleton } from "../components/ui";
 import { ModuleArtwork } from "../components/ModuleArtwork";
+import { useModuleLabel } from "../useModuleLabel";
 import { normalizeAppearance } from "../appearance";
 
 const collectionLabels: Record<string, string> = { planItems: "今日计划", quickMemos: "快速备忘", mediaContents: "自媒体", devProjects: "开发项目", devMilestones: "里程碑", devWorkItems: "开发工作项", devLogs: "开发日志", clients: "客户", consultingProjects: "咨询项目", consultingInteractions: "沟通记录", consultingDeliverables: "交付物", consultingFollowups: "咨询跟进", consultingTimeEntries: "咨询时长", workoutTemplates: "训练模板", workoutTemplateExercises: "模板动作", workouts: "训练记录", workoutExercises: "训练动作", workoutSets: "训练组", bodyMetrics: "身体数据", nutritionTargets: "营养目标", foods: "常用食物", meals: "餐食", mealItems: "餐食明细", entertainmentItems: "游戏娱乐", playSessions: "游玩记录", planSlots: "任务计划", planCompletions: "任务完成", calendarNotes: "日历备注", deskProjects: "处理台" };
 
 export function SettingsPage() {
   const { data, run } = useWorkspace();
+  const moduleLabel = useModuleLabel("数据与设置");
   const system = useQuery({ queryKey: ["system"], queryFn: api.systemStatus });
   const backups = useQuery({ queryKey: ["backups"], queryFn: api.backups });
   const autostart = useQuery({ queryKey: ["autostart"], queryFn: api.getAutostart });
@@ -34,7 +36,7 @@ export function SettingsPage() {
   };
   const createBackup = async () => { setBusy("backup"); try { await run(() => api.createBackup("手动备份", false)); } finally { setBusy(""); } };
   const exportAll = async () => { setBusy("export"); try { const result = await run(api.exportAll); window.location.href = result.downloadUrl; } finally { setBusy(""); } };
-  if (system.isLoading || backups.isLoading || autostart.isLoading) return <><PageHeader icon={<ModuleArtwork module="settings" />} eyebrow="系统" title="数据与设置" description="检查本地数据和备份状态" /><Skeleton lines={8} /></>;
+  if (system.isLoading || backups.isLoading || autostart.isLoading) return <><PageHeader icon={<ModuleArtwork module="settings" />} eyebrow="系统" title={moduleLabel} description="检查本地数据和备份状态" /><Skeleton lines={8} /></>;
   if (system.error || backups.error) return <ErrorState message={((system.error || backups.error) as Error).message} onRetry={() => { void system.refetch(); void backups.refetch(); }} />;
   const status = system.data!;
   const selectedBackup = backups.data?.find((backup) => backup.id === restoreId);
@@ -67,7 +69,7 @@ export function SettingsPage() {
   const clearBackground = () => void run(() => api.saveSettings({ background_image: "" }));
   return (
     <div>
-      <PageHeader icon={<ModuleArtwork module="settings" />} eyebrow="本机数据控制" title="数据与设置" description="查看数据文件、创建备份、恢复历史版本并调整使用偏好。" />
+      <PageHeader icon={<ModuleArtwork module="settings" />} eyebrow="本机数据控制" title={moduleLabel} description="查看数据文件、创建备份、恢复历史版本并调整使用偏好。" />
       <Section title="数据文件" description="业务数据保存在浏览器之外的独立 SQLite 文件中" action={<Button variant="secondary" onClick={() => void api.openDataDirectory()}><FolderOpen size={16} />打开数据目录</Button>}>
         <div className="data-file-panel"><div className="file-icon"><Database size={27} /></div><div className="file-copy"><strong>app.sqlite</strong><code>{status.dataFile.path}</code><div><span>{formatBytes(status.dataFile.size)}</span><span>修改于 {formatDateTime(status.dataFile.modifiedAt)}</span><Badge tone={status.dataFile.writable ? "success" : "warning"}><Check size={12} />{status.dataFile.writable ? "可读写" : "只读"}</Badge></div></div></div>
       </Section>

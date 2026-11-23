@@ -9,6 +9,7 @@ import { buildMediaAnalytics } from "../features/mediaAnalytics";
 import { formatDate, localDate, classNames } from "../utils";
 import { Badge, Button, EmptyState, EntityForm, Modal, PageHeader, Section, type FieldDefinition } from "../components/ui";
 import { ModuleArtwork } from "../components/ModuleArtwork";
+import { useModuleLabel } from "../useModuleLabel";
 
 const stages = [
   { value: "idea", label: "灵感" },
@@ -35,6 +36,7 @@ const fields: FieldDefinition[] = [
 
 export function MediaPage() {
   const { data, run } = useWorkspace();
+  const moduleLabel = useModuleLabel("自媒体");
   const [params, setParams] = useSearchParams();
   const [editing, setEditing] = useState<Record<string, any> | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export function MediaPage() {
   const handleDragEnd = (event: DragEndEvent) => { if (event.over?.id) void move(String(event.active.id), String(event.over.id)); };
   return (
     <div>
-      <PageHeader icon={<ModuleArtwork module="media" />} eyebrow="创作流程" title="自媒体" description="从灵感、制作到发布，把内容放在真正的创作流程里。" actions={<Button onClick={() => setEditing({ stage: "idea" })}><Plus size={18} />记录内容</Button>} />
+      <PageHeader icon={<ModuleArtwork module="media" />} eyebrow="创作流程" title={moduleLabel} description="从灵感、制作到发布，把内容放在真正的创作流程里。" actions={<Button onClick={() => setEditing({ stage: "idea" })}><Plus size={18} />记录内容</Button>} />
       <div className="media-kpis"><div><span>正在制作</span><strong>{data.mediaContents.filter((item) => item.stage === "producing").length}</strong></div><div><span>等待发布</span><strong>{data.mediaContents.filter((item) => item.stage === "ready").length}</strong></div><div><span>本月已发布</span><strong>{data.mediaContents.filter((item) => item.stage === "published" && item.published_at?.slice(0, 7) === localDate().slice(0, 7)).length}</strong></div></div>
       <Section title="发布后数据" description="对比最近 12 条已发布内容的播放、点赞和评论" action={<Badge tone="accent">{analytics.points.length} 条有数据</Badge>}>
         {analytics.points.length ? <div className="media-analytics-grid">
