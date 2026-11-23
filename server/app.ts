@@ -243,6 +243,27 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     return { data: { opened: true } };
   });
 
+  // 当前 Windows 桌面壁纸（背景透明功能用）
+  app.get("/api/system/wallpaper", async (_request, reply) => {
+    const candidates = [
+      path.join(process.env.APPDATA ?? "", "Microsoft", "Windows", "Themes", "TranscodedWallpaper"),
+      path.join(os.homedir(), "AppData", "Roaming", "Microsoft", "Windows", "Themes", "TranscodedWallpaper"),
+    ];
+    let file = candidates.find((candidate) => candidate && fs.existsSync(candidate)) ?? "";
+    if (!file) {
+      try {
+        const out = execFileSync("reg", ["query", "HKCU\\Control Panel\\Desktop", "/v", "Wallpaper"], { encoding: "utf8", windowsHide: true });
+        const match = out.match(/Wallpaper\s+REG_SZ\s+(.+)/);
+        if (match) {
+          const value = match[1].trim();
+          if (fs.existsSync(value)) file = value;
+        }
+      } catch { /* ignore */ }
+    }
+    if (!file) return reply.code(404).send("no wallpaper");
+    return reply.type("image/jpeg").send(fs.readFileSync(file));
+  });
+
   // 打开「控制面板」
   app.post("/api/system/open-control-panel", async () => {
     const child = spawn("explorer.exe", ["shell:ControlPanelFolder"], { detached: true, stdio: "ignore" });
