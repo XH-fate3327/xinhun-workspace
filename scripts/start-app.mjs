@@ -233,7 +233,7 @@ async function maybeOpenBrowser() {
   } catch {
     // 读不到设置就按默认窗口尺寸启动
   }
-  const { command, args } = browserOpenCommandFor(process.platform, baseUrl, path.join(dataRoot, "edge-profile"), fullscreen);
+  const { command, args } = browserOpenCommandFor(process.platform, `${baseUrl}/launcher`, path.join(dataRoot, "edge-profile"), fullscreen);
   // windowsHide 必须为 false：否则全新 Edge 实例（独立 profile）的窗口会被隐藏
   const opener = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: false });
   opener.unref();
