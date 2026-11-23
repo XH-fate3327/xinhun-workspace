@@ -237,49 +237,34 @@ async function maybeOpenBrowser() {
   // windowsHide 必须为 false：否则全新 Edge 实例（独立 profile）的窗口会被隐藏
   const opener = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: false });
   opener.unref();
-  // 先按设置的尺寸打开，稍后再最大化：这样点“还原”时窗口回到设置的尺寸
-  if (fullscreen) fixRestoreSize();
+  // 先按设置的尺寸打开，窗口出现后再最大化：这样点“还原”时回到设置的尺寸
+  if (fullscreen) maximizeSoon();
 }
 
-function fixRestoreSize() {
+function maximizeSoon() {
   const script = `
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
-public class XRestore {
-  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
-  [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
-  [StructLayout(LayoutKind.Sequential)] public struct WINDOWPLACEMENT { public int length; public int flags; public int showCmd; public POINT ptMinPosition; public POINT ptMaxPosition; public RECT rcNormalPosition; }
-  [DllImport("user32.dll")] public static extern bool GetWindowPlacement(IntPtr h, ref WINDOWPLACEMENT wp);
-  [DllImport("user32.dll")] public static extern bool SetWindowPlacement(IntPtr h, ref WINDOWPLACEMENT wp);
-  [DllImport("user32.dll")] public static extern uint GetDpiForWindow(IntPtr h);
+public class XMaxFinal {
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int c);
 }
 "@
 $deadline = (Get-Date).AddSeconds(30)
 while ((Get-Date) -lt $deadline) {
   $p = Get-Process | Where-Object { $_.MainWindowTitle -eq '心魂工作台' } | Select-Object -First 1
   if ($p) {
-    $wp = New-Object 'XRestore+WINDOWPLACEMENT'
-    $wp.length = [System.Runtime.InteropServices.Marshal]::SizeOf([type]'XRestore+WINDOWPLACEMENT')
-    [XRestore]::GetWindowPlacement($p.MainWindowHandle, [ref]$wp) | Out-Null
-    // PowerShell 是 DPI 不敏感的，GetWindowPlacement 返回的就是逻辑像素（1317x853）
-    $w = 1317
-    $h = 853
-    $left = $wp.rcNormalPosition.Left
-    $top = $wp.rcNormalPosition.Top
-    $wp.rcNormalPosition.Left = $left
-    $wp.rcNormalPosition.Top = $top
-    $wp.rcNormalPosition.Right = $left + $w
-    $wp.rcNormalPosition.Bottom = $top + $h
-    $wp.showCmd = 3
-    [XRestore]::SetWindowPlacement($p.MainWindowHandle, [ref]$wp) | Out-Null
+    [XMaxFinal]::ShowWindow($p.MainWindowHandle, 3) | Out-Null
     break
   }
   Start-Sleep -Milliseconds 500
 }
 `;
-  const helper = spawn("powershell", ["-NoProfile", "-Command", script], { detached: true, stdio: "ignore", windowsHide: true });
-  helper.unref();
+  try {
+    spawnSync("powershell", ["-NoProfile", "-Command", script], { stdio: "ignore", windowsHide: true, timeout: 20_000 });
+  } catch {
+    // 最大化失败不影响启动
+  }
 }
 
 async function acquireLaunchLock() {
