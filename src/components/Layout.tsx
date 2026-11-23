@@ -53,12 +53,18 @@ export function AppLayout() {
   const customBackground = typeof data.settings.background_image === "string" && data.settings.background_image.startsWith("data:image") ? data.settings.background_image : "";
   // 背景透明：整窗半透明 + 页面背景透明，让桌面动态壁纸透出来（优先级高于自定义背景图）
   const transparentBackground = data.settings.transparentBackground === true;
+  const transparentAlpha = typeof data.settings.transparentAlpha === "number" ? Math.min(255, Math.max(170, data.settings.transparentAlpha)) : 215;
   const backgroundUrl = transparentBackground ? "" : customBackground;
   useEffect(() => {
     document.body.classList.toggle("transparent-background", transparentBackground);
-    void api.setWindowOpacity(transparentBackground ? 200 : 255).catch(() => undefined);
-    return () => { document.body.classList.remove("transparent-background"); };
-  }, [transparentBackground]);
+    const timer = window.setTimeout(() => {
+      void api.setWindowOpacity(transparentBackground ? transparentAlpha : 255).catch(() => undefined);
+    }, 150);
+    return () => {
+      window.clearTimeout(timer);
+      document.body.classList.remove("transparent-background");
+    };
+  }, [transparentBackground, transparentAlpha]);
 
   // 侧边栏顺序：可拖动排序，结果存 settings.navOrder（分组名 → 路由数组）
   const navOrder = (data.settings.navOrder as Record<string, string[]> | undefined) ?? {};

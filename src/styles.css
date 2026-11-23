@@ -617,6 +617,9 @@ body.transparent-background .app-shell > .ambient-environment, body.transparent-
 }
 /* 记录台：拖图到某个板块时高亮 */
 .desk-card.is-drop-target { border-color: var(--accent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent); }
+.alpha-slider { display: flex; align-items: center; gap: 10px; }
+.alpha-slider input { width: 150px; accent-color: var(--accent); }
+.alpha-slider span { font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
 .nav-link.active {
   color: var(--accent-deep);
   font-weight: 600;
