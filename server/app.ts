@@ -2,7 +2,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import fastifyStatic from "@fastify/static";
 import fs from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import { z } from "zod";
 import { getAppPaths, type AppPaths } from "./config.js";
 import { DatabaseManager } from "./database.js";
@@ -13,6 +13,47 @@ import { collectionDefinitions, isCollectionName, sourceCollectionByType } from 
 import { openPathCommand } from "./platform.js";
 
 const bodySchema = z.record(z.string(), z.unknown());
+
+// ——— 开机自启（Windows 注册表 HKCU\Software\Microsoft\Windows\CurrentVersion\Run） ———
+const AUTOSTART_KEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+const AUTOSTART_VALUE = "XinhunWorkspace";
+
+function launcherCommand(dataRoot: string): string | null {
+  if (process.platform !== "win32") return null;
+  const appRoot = path.dirname(dataRoot);
+  for (const name of ["心魂工作台.exe", "启动心魂工作台.bat"]) {
+    const candidate = path.join(appRoot, name);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+function readAutostart(dataRoot: string): { supported: boolean; enabled: boolean; command: string | null } {
+  if (process.platform !== "win32") return { supported: false, enabled: false, command: null };
+  const launcher = launcherCommand(dataRoot);
+  try {
+    // 只判断值是否存在；命令路径直接用计算值，避免 reg.exe 输出编码（GBK）导致中文乱码
+    execFileSync("reg", ["query", AUTOSTART_KEY, "/v", AUTOSTART_VALUE], { encoding: "utf8", windowsHide: true });
+    return { supported: true, enabled: true, command: launcher };
+  } catch {
+    return { supported: true, enabled: false, command: launcher };
+  }
+}
+
+function setAutostart(dataRoot: string, enabled: boolean): void {
+  if (process.platform !== "win32") throw new ValidationError("当前系统不支持开机自启");
+  if (enabled) {
+    const command = launcherCommand(dataRoot);
+    if (!command) throw new ValidationError("未找到启动器（心魂工作台.exe）");
+    execFileSync("reg", ["add", AUTOSTART_KEY, "/v", AUTOSTART_VALUE, "/t", "REG_SZ", "/d", `"${command}"`, "/f"], { encoding: "utf8", windowsHide: true });
+  } else {
+    try {
+      execFileSync("reg", ["delete", AUTOSTART_KEY, "/v", AUTOSTART_VALUE, "/f"], { encoding: "utf8", windowsHide: true });
+    } catch {
+      // 本来就不存在，忽略
+    }
+  }
+}
 
 export type BuildAppOptions = {
   dataDir?: string;
@@ -196,6 +237,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     if (!fs.existsSync(body.path)) throw new ValidationError("这个本地路径不存在");
     openPath(path.resolve(body.path));
     return { data: { opened: true } };
+  });
+
+  app.get("/api/system/autostart", async () => ({ data: readAutostart(paths.root) }));
+  app.put("/api/system/autostart", async (request) => {
+    const body = z.object({ enabled: z.boolean() }).parse(request.body ?? {});
+    setAutostart(paths.root, body.enabled);
+    return { data: readAutostart(paths.root) };
   });
 
   app.get("/api/backups", async () => ({ data: backups.list() }));
