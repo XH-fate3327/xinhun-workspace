@@ -81,6 +81,9 @@ export function LauncherPage() {
   const [error, setError] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [catDragIndex, setCatDragIndex] = useState<number | null>(null);
+  const [catOverIndex, setCatOverIndex] = useState<number | null>(null);
+  const [categoryMenu, setCategoryMenu] = useState<{ id: string; name: string } | null>(null);
   const iconInput = useRef<HTMLInputElement>(null);
 
   const openItem = async (item: Entity) => {
@@ -94,6 +97,18 @@ export function LauncherPage() {
   const saveOrder = useCallback(async (next: Entity[]) => {
     await run(() => api.saveSettings({ launcherOrder: next.map((item) => item.id) }));
   }, [run]);
+
+  const onCategoryReorder = (index: number) => async (event: DragEvent) => {
+    event.preventDefault();
+    if (catDragIndex !== null && catDragIndex !== index) {
+      const next = [...categories];
+      const [moved] = next.splice(catDragIndex, 1);
+      next.splice(index, 0, moved);
+      await run(() => api.saveSettings({ launcherCategories: next }));
+    }
+    setCatDragIndex(null);
+    setCatOverIndex(null);
+  };
 
   const addItemFromPath = async (name: string, target: string) => {
     let icon = "";
@@ -229,15 +244,21 @@ export function LauncherPage() {
         <button className={classNames("launcher-category", activeCategory === "all" && "active")} onClick={() => setActiveCategory("all")}>
           <strong>全部</strong><small>{items.length}</small>
         </button>
-        {categories.map((category) => (
-          <div key={category.id} className={classNames("launcher-category", activeCategory === category.id && "active")}>
+        {categories.map((category, index) => (
+          <div
+            key={category.id}
+            className={classNames("launcher-category", "is-draggable", activeCategory === category.id && "active", catDragIndex === index && "is-dragging", catOverIndex === index && catDragIndex !== null && catDragIndex !== index && "is-over")}
+            draggable
+            onDragStart={() => setCatDragIndex(index)}
+            onDragOver={(event) => { event.preventDefault(); setCatOverIndex(index); }}
+            onDrop={(event) => void onCategoryReorder(index)(event)}
+            onDragEnd={() => { setCatDragIndex(null); setCatOverIndex(null); }}
+            onContextMenu={(event) => { event.preventDefault(); setCategoryMenu({ id: category.id, name: category.name }); }}
+            title={`${category.name}（右键修改/删除，拖动调整顺序）`}
+          >
             <button className="launcher-category-main" onClick={() => setActiveCategory(category.id)}>
               <strong>{category.name}</strong><small>{items.filter((item) => String(item.category ?? "") === category.id).length}</small>
             </button>
-            <span className="launcher-category-tools">
-              <IconButton label="重命名分类夹" onClick={() => setCategoryDraft({ id: category.id, name: category.name })}><PencilSimple size={13} /></IconButton>
-              <IconButton label="删除分类夹" onClick={() => void removeCategory(category.id)}><Trash size={13} /></IconButton>
-            </span>
           </div>
         ))}
         <button className="launcher-category launcher-category-add" onClick={() => setCategoryDraft({ name: "" })}><Plus size={15} />新建分类夹</button>
@@ -308,6 +329,18 @@ export function LauncherPage() {
             <div className="launcher-form-actions">
               <Button variant="secondary" onClick={() => setCategoryDraft(null)}>取消</Button>
               <Button onClick={() => void saveCategory()}>保存</Button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+
+      {categoryMenu ? (
+        <Modal open onClose={() => setCategoryMenu(null)} title={`分类夹：${categoryMenu.name}`}>
+          <div className="launcher-form">
+            <Button variant="secondary" onClick={() => { setCategoryDraft({ id: categoryMenu.id, name: categoryMenu.name }); setCategoryMenu(null); }}><PencilSimple size={15} />重命名</Button>
+            <Button variant="ghost" className="danger-text" onClick={() => { void removeCategory(categoryMenu.id); setCategoryMenu(null); }}><Trash size={15} />删除这个分类夹</Button>
+            <div className="launcher-form-actions">
+              <Button variant="ghost" onClick={() => setCategoryMenu(null)}>取消</Button>
             </div>
           </div>
         </Modal>
