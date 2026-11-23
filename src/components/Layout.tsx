@@ -60,13 +60,6 @@ export function AppLayout() {
     return () => { document.body.classList.remove("transparent-background"); };
   }, [transparentBackground]);
 
-  // 失去焦点时把自己压到最底层，保证其他软件窗口始终在前面
-  useEffect(() => {
-    const onBlur = () => { void api.sinkWindow().catch(() => undefined); };
-    window.addEventListener("blur", onBlur);
-    return () => window.removeEventListener("blur", onBlur);
-  }, []);
-
   // 侧边栏顺序：可拖动排序，结果存 settings.navOrder（分组名 → 路由数组）
   const navOrder = (data.settings.navOrder as Record<string, string[]> | undefined) ?? {};
   // 自定义导航名称：右键重命名，存 settings.navLabels（路由 → 名称）
