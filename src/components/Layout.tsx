@@ -60,9 +60,9 @@ export function AppLayout() {
   const shortcut = (key: string) => {
     const saved = topbarShortcuts[key] ?? {};
     const fallback: Record<string, { label: string; path: string }> = {
-      download: { label: "下载", path: "D:\\下载" },
-      photo: { label: "图片", path: "D:\\下载\\图片" },
-      music: { label: "音乐", path: "D:\\下载\\音乐" },
+      download: { label: "下载", path: "%USERPROFILE%\\Downloads" },
+      photo: { label: "图片", path: "%USERPROFILE%\\Pictures" },
+      music: { label: "音乐", path: "%USERPROFILE%\\Music" },
     };
     return { label: saved.label || fallback[key].label, path: saved.path || fallback[key].path };
   };

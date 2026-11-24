@@ -230,8 +230,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
   app.post("/api/system/open-path", async (request) => {
     const body = z.object({ path: z.string().min(1) }).parse(request.body);
-    if (!fs.existsSync(body.path)) throw new ValidationError("这个本地路径不存在");
-    openPath(path.resolve(body.path));
+    const expanded = body.path.replace(/%([A-Za-z_]+)%/g, (_, key: string) => process.env[key] ?? "");
+    if (!fs.existsSync(expanded)) throw new ValidationError("这个本地路径不存在");
+    openPath(path.resolve(expanded));
     return { data: { opened: true } };
   });
 

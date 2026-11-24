@@ -12,9 +12,9 @@ import { normalizeAppearance } from "../appearance";
 
 const SHORTCUT_KEYS = ["download", "photo", "music"] as const;
 const DEFAULT_SHORTCUTS: Record<string, { label: string; path: string }> = {
-  download: { label: "下载", path: "D:\\下载" },
-  photo: { label: "图片", path: "D:\\下载\\图片" },
-  music: { label: "音乐", path: "D:\\下载\\音乐" },
+  download: { label: "下载", path: "%USERPROFILE%\\Downloads" },
+  photo: { label: "图片", path: "%USERPROFILE%\\Pictures" },
+  music: { label: "音乐", path: "%USERPROFILE%\\Music" },
 };
 
 const collectionLabels: Record<string, string> = { planItems: "今日计划", quickMemos: "快速备忘", mediaContents: "自媒体", clients: "客户", consultingProjects: "咨询项目", consultingInteractions: "沟通记录", consultingDeliverables: "交付物", consultingFollowups: "咨询跟进", consultingTimeEntries: "咨询时长", workoutTemplates: "训练模板", workoutTemplateExercises: "模板动作", workouts: "训练记录", workoutExercises: "训练动作", workoutSets: "训练组", bodyMetrics: "身体数据", nutritionTargets: "营养目标", foods: "常用食物", meals: "餐食", mealItems: "餐食明细", entertainmentItems: "游戏娱乐", playSessions: "游玩记录", planSlots: "任务计划", planCompletions: "任务完成", calendarNotes: "日历备注", deskProjects: "处理台" };
