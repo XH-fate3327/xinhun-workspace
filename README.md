@@ -1,10 +1,10 @@
-# 心魂工作台 · Xinhun Workspace
+﻿# 心魂工作台 · Xinhun Workspace
 
 > 一款只在自己电脑上运行的**本地个人工作台**。把任务计划、图文记录、常用软件启动器收进同一个窗口，数据保存在本机 SQLite 文件里，不注册账号、不依赖云服务。
 
 **当前版本：v1.0.0** · 平台：Windows（便携版）· 许可：MIT
 
-![任务计划](docs/screenshots/01-task-plan.png)
+![任务计划](docs/screenshots/01-task-plan.webp)
 
 ---
 
@@ -42,19 +42,19 @@
 
 ### 任务计划
 
-![任务计划](docs/screenshots/01-task-plan.png)
+![任务计划](docs/screenshots/01-task-plan.webp)
 
 ### 启动台
 
-![启动台](docs/screenshots/02-launcher.png)
+![启动台](docs/screenshots/02-launcher.webp)
 
 ### 记录台
 
-![记录台](docs/screenshots/03-desk.png)
+![记录台](docs/screenshots/03-desk.webp)
 
 ### 数据与设置
 
-![数据与设置](docs/screenshots/04-settings.png)
+![数据与设置](docs/screenshots/04-settings.webp)
 
 ---
 
