@@ -48,12 +48,12 @@ export function AppLayout() {
   const system = useQuery({ queryKey: ["system"], queryFn: api.systemStatus, staleTime: 30_000 });
   const currentPage = routeMeta[location.pathname] ?? routeMeta["/"];
   const appearance = normalizeAppearance(data.settings.appearance);
-  const theme = data.settings.theme === "dark" ? "dark" : "light";
+  const theme = data.settings.theme === "light" ? "light" : "dark";
   const ambientScene = chooseAmbientScene(currentPage.module, theme);
   const customBackground = typeof data.settings.background_image === "string" && data.settings.background_image.startsWith("data:image") ? data.settings.background_image : "";
   // 背景透明：整窗半透明 + 页面背景透明，让桌面动态壁纸透出来（优先级高于自定义背景图）
-  const transparentBackground = data.settings.transparentBackground === true;
-  const transparentAlpha = typeof data.settings.transparentAlpha === "number" ? Math.min(255, Math.max(170, data.settings.transparentAlpha)) : 215;
+  const transparentBackground = data.settings.transparentBackground !== false;
+  const transparentAlpha = typeof data.settings.transparentAlpha === "number" ? Math.min(255, Math.max(170, data.settings.transparentAlpha)) : 240;
   const backgroundUrl = transparentBackground ? "" : customBackground;
   // 顶栏快捷方式：下载/图片/音乐 的显示名与目标路径来自设置
   const topbarShortcuts = (data.settings.topbarShortcuts as Record<string, { label?: string; path?: string }> | undefined) ?? {};
@@ -68,7 +68,7 @@ export function AppLayout() {
   };
 
   useEffect(() => {
-    const scale = typeof data.settings.uiScale === "number" ? Math.min(1.2, Math.max(0.8, data.settings.uiScale)) : 1;
+    const scale = typeof data.settings.uiScale === "number" ? Math.min(1.2, Math.max(0.8, data.settings.uiScale)) : 1.1;
     document.documentElement.style.setProperty("--ui-scale", String(scale));
   }, [data.settings.uiScale]);
 
