@@ -644,6 +644,13 @@ body { zoom: var(--ui-scale, 1); }
 .desk-tag { border: 1px solid var(--border); background: var(--surface-inset); color: var(--text-soft); border-radius: 999px; padding: 2px 9px; font-size: 11px; cursor: pointer; }
 .desk-tag:hover { border-color: var(--accent); color: var(--accent); }
 .desk-tag-input { width: 80px; border: 0; background: transparent; color: var(--text); font-size: 11px; outline: none; }
+/* 顶栏快捷方式设置 */
+.shortcut-list { display: grid; gap: 8px; }
+.shortcut-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.shortcut-row .shortcut-label { width: 90px; }
+.shortcut-row .shortcut-path { flex: 1; min-width: 220px; }
+.shortcut-row input { border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-raised); color: var(--text); padding: 8px 10px; font-size: 12px; font-family: var(--font-ui); }
+.shortcut-row input:focus { outline: none; border-color: var(--accent); }
 .nav-link.active {
   color: var(--accent-deep);
   font-weight: 600;

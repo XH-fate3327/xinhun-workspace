@@ -55,6 +55,18 @@ export function AppLayout() {
   const transparentBackground = data.settings.transparentBackground === true;
   const transparentAlpha = typeof data.settings.transparentAlpha === "number" ? Math.min(255, Math.max(170, data.settings.transparentAlpha)) : 215;
   const backgroundUrl = transparentBackground ? "" : customBackground;
+  // 顶栏快捷方式：下载/图片/音乐 的显示名与目标路径来自设置
+  const topbarShortcuts = (data.settings.topbarShortcuts as Record<string, { label?: string; path?: string }> | undefined) ?? {};
+  const shortcut = (key: string) => {
+    const saved = topbarShortcuts[key] ?? {};
+    const fallback: Record<string, { label: string; path: string }> = {
+      download: { label: "下载", path: "D:\\下载" },
+      photo: { label: "图片", path: "D:\\下载\\图片" },
+      music: { label: "音乐", path: "D:\\下载\\音乐" },
+    };
+    return { label: saved.label || fallback[key].label, path: saved.path || fallback[key].path };
+  };
+
   useEffect(() => {
     const scale = typeof data.settings.uiScale === "number" ? Math.min(1.2, Math.max(0.8, data.settings.uiScale)) : 1;
     document.documentElement.style.setProperty("--ui-scale", String(scale));
@@ -251,9 +263,9 @@ export function AppLayout() {
           <div className="topbar-actions">
             <span className="topbar-quick">
               <IconButton label="打开资源管理器" onClick={() => void api.openExplorer().catch(() => undefined)}><House size={19} /></IconButton>
-              <IconButton label="下载（D:\下载）" onClick={() => void api.openPath("D:\\下载").catch(() => undefined)}><DownloadSimple size={19} /></IconButton>
-              <IconButton label="图片（D:\下载\图片）" onClick={() => void api.openPath("D:\\下载\\图片").catch(() => undefined)}><ImageSquare size={19} /></IconButton>
-              <IconButton label="音乐（D:\下载\音乐）" onClick={() => void api.openPath("D:\\下载\\音乐").catch(() => undefined)}><MusicNotes size={19} /></IconButton>
+              <IconButton label={`${shortcut("download").label}（${shortcut("download").path}）`} onClick={() => void api.openPath(shortcut("download").path).catch(() => undefined)}><DownloadSimple size={19} /></IconButton>
+              <IconButton label={`${shortcut("photo").label}（${shortcut("photo").path}）`} onClick={() => void api.openPath(shortcut("photo").path).catch(() => undefined)}><ImageSquare size={19} /></IconButton>
+              <IconButton label={`${shortcut("music").label}（${shortcut("music").path}）`} onClick={() => void api.openPath(shortcut("music").path).catch(() => undefined)}><MusicNotes size={19} /></IconButton>
               <IconButton label="控制面板" onClick={() => void api.openControlPanel().catch(() => undefined)}><Gear size={19} /></IconButton>
               <IconButton label="关机" onClick={() => setShutdownOpen(true)}><Power size={19} /></IconButton>
             </span>

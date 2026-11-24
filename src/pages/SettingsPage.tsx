@@ -10,6 +10,13 @@ import { ModuleArtwork } from "../components/ModuleArtwork";
 import { useModuleLabel } from "../useModuleLabel";
 import { normalizeAppearance } from "../appearance";
 
+const SHORTCUT_KEYS = ["download", "photo", "music"] as const;
+const DEFAULT_SHORTCUTS: Record<string, { label: string; path: string }> = {
+  download: { label: "下载", path: "D:\\下载" },
+  photo: { label: "图片", path: "D:\\下载\\图片" },
+  music: { label: "音乐", path: "D:\\下载\\音乐" },
+};
+
 const collectionLabels: Record<string, string> = { planItems: "今日计划", quickMemos: "快速备忘", mediaContents: "自媒体", clients: "客户", consultingProjects: "咨询项目", consultingInteractions: "沟通记录", consultingDeliverables: "交付物", consultingFollowups: "咨询跟进", consultingTimeEntries: "咨询时长", workoutTemplates: "训练模板", workoutTemplateExercises: "模板动作", workouts: "训练记录", workoutExercises: "训练动作", workoutSets: "训练组", bodyMetrics: "身体数据", nutritionTargets: "营养目标", foods: "常用食物", meals: "餐食", mealItems: "餐食明细", entertainmentItems: "游戏娱乐", playSessions: "游玩记录", planSlots: "任务计划", planCompletions: "任务完成", calendarNotes: "日历备注", deskProjects: "处理台" };
 
 export function SettingsPage() {
@@ -25,6 +32,27 @@ export function SettingsPage() {
   const [permanent, setPermanent] = useState<{ collection: CollectionName; id: string; title: string } | null>(null);
   const [emptyTrashOpen, setEmptyTrashOpen] = useState(false);
   const backgroundInput = useRef<HTMLInputElement>(null);
+  const pathRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const shortcutOf = (key: string) => {
+    const saved = (data.settings.topbarShortcuts as Record<string, { label?: string; path?: string }> | undefined)?.[key] ?? {};
+    const fallback = DEFAULT_SHORTCUTS[key];
+    return { label: saved.label || fallback.label, path: saved.path || fallback.path };
+  };
+  const saveShortcut = (key: string, patch: { label?: string; path?: string }) => {
+    const saved = (data.settings.topbarShortcuts as Record<string, { label?: string; path?: string }> | undefined) ?? {};
+    void run(() => api.saveSettings({ topbarShortcuts: { ...saved, [key]: { ...shortcutOf(key), ...patch } } }));
+  };
+  const pickShortcut = async (key: string) => {
+    try {
+      const result = await api.pickFolder();
+      if (!result.path) return;
+      const input = pathRefs.current[key];
+      if (input) input.value = result.path;
+      saveShortcut(key, { path: result.path });
+    } catch (cause) {
+      console.error(cause);
+    }
+  };
   const saveSetting = (key: string, value: any) => run(() => api.saveSettings({ [key]: value }));
   const toggleAutostart = async (enabled: boolean) => {
     setAutostartBusy(true);
@@ -106,6 +134,20 @@ export function SettingsPage() {
           <div><div><strong>背景透明程度</strong><small>越大越不透明：文字和图标更清晰，壁纸更淡；越小壁纸越明显</small></div><div className="alpha-slider"><input type="range" min={170} max={255} step={1} value={typeof data.settings.transparentAlpha === "number" ? Math.min(255, Math.max(170, data.settings.transparentAlpha)) : 215} onChange={(event) => void saveSetting("transparentAlpha", Number(event.target.value))} aria-label="背景透明程度" /><span>{typeof data.settings.transparentAlpha === "number" ? data.settings.transparentAlpha : 215}</span></div></div>
           <div><div><strong>开机自启</strong><small>{autostart.data?.supported ? "登录 Windows 时自动启动心魂工作台" : "当前系统不支持"}</small></div><div className="theme-toggle" role="group" aria-label="开机自启"><button className={autostart.data?.enabled ? "active" : ""} aria-pressed={Boolean(autostart.data?.enabled)} disabled={autostartBusy || !autostart.data?.supported} onClick={() => void toggleAutostart(true)}>开启</button><button className={autostart.data && !autostart.data.enabled ? "active" : ""} aria-pressed={Boolean(autostart.data && !autostart.data.enabled)} disabled={autostartBusy || !autostart.data?.supported} onClick={() => void toggleAutostart(false)}>关闭</button></div></div>
           <div><div><strong>启动时全屏</strong><small>下次启动时最大化窗口（保留底部任务栏，方便切到其他软件）</small></div><div className="theme-toggle" role="group" aria-label="启动时全屏"><button className={data.settings.launchFullscreen === true ? "active" : ""} aria-pressed={data.settings.launchFullscreen === true} onClick={() => void saveSetting("launchFullscreen", true)}>开启</button><button className={data.settings.launchFullscreen !== true ? "active" : ""} aria-pressed={data.settings.launchFullscreen !== true} onClick={() => void saveSetting("launchFullscreen", false)}>关闭</button></div></div>
+        </div>
+      </Section>
+      <Section title="顶栏快捷方式" description="顶栏那排按钮中「下载 / 图片 / 音乐」指向的目录，可自定义名称与路径">
+        <div className="shortcut-list">
+          {SHORTCUT_KEYS.map((key) => {
+            const item = shortcutOf(key);
+            return (
+              <div className="shortcut-row" key={key}>
+                <input className="shortcut-label" defaultValue={item.label} aria-label={`${item.label} 名称`} onBlur={(event) => { const value = event.target.value.trim() || DEFAULT_SHORTCUTS[key].label; if (value !== item.label) saveShortcut(key, { label: value }); }} />
+                <input className="shortcut-path" defaultValue={item.path} aria-label={`${item.label} 路径`} ref={(element) => { pathRefs.current[key] = element; }} onBlur={(event) => { const value = event.target.value.trim(); if (value && value !== item.path) saveShortcut(key, { path: value }); }} />
+                <Button variant="secondary" size="sm" onClick={() => void pickShortcut(key)}><FolderOpen size={15} />选文件夹</Button>
+              </div>
+            );
+          })}
         </div>
       </Section>
       <Section title="回收站" description="删除记录先进入这里，永久删除需要再次确认" action={data.trash.length ? <Button variant="ghost" size="sm" className="danger-text" onClick={() => setEmptyTrashOpen(true)}><Trash size={15} />一键全部删除</Button> : undefined}>
