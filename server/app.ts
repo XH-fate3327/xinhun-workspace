@@ -240,7 +240,6 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.post("/api/system/open-explorer", async () => {
     const child = spawn("explorer.exe", ["shell:MyComputerFolder"], { detached: true, stdio: "ignore" });
     child.unref();
-    sinkWorkbench();
     bringToFront(child.pid ?? 0, "此电脑");
     return { data: { opened: true } };
   });
@@ -306,7 +305,6 @@ if ($p) {
     if (!fs.existsSync(body.path)) throw new ValidationError("这个本地路径不存在");
     const script = `Start-Process -FilePath '${body.path.replace(/'/g, "''")}' -Verb RunAs`;
     execFile("powershell", ["-NoProfile", "-Command", script], { windowsHide: true }, () => undefined);
-    sinkWorkbench();
     return { data: { started: true } };
   });
 
@@ -314,7 +312,6 @@ if ($p) {
   app.post("/api/system/open-control-panel", async () => {
     const child = spawn("explorer.exe", ["shell:ControlPanelFolder"], { detached: true, stdio: "ignore" });
     child.unref();
-    sinkWorkbench();
     bringToFront(child.pid ?? 0, "控制面板");
     return { data: { opened: true } };
   });
