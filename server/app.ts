@@ -379,10 +379,16 @@ if ($p) {
     const script = [
       "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
       "Add-Type -AssemblyName System.Windows.Forms",
+      "$owner = New-Object System.Windows.Forms.Form",
+      "$owner.TopMost = $true",
+      "$owner.ShowInTaskbar = $false",
+      "$owner.WindowState = 'Minimized'",
+      "$owner.Show()",
       "$d = New-Object System.Windows.Forms.FolderBrowserDialog",
       "$d.Description = '选择要添加的文件夹'",
       "$d.ShowNewFolderButton = $false",
-      "$r = $d.ShowDialog()",
+      "$r = $d.ShowDialog($owner)",
+      "$owner.Close()",
       "if ($r -eq [System.Windows.Forms.DialogResult]::OK) { $d.SelectedPath }",
     ].join("; ");
     const path = await new Promise<string>((resolve) => {
@@ -396,10 +402,16 @@ if ($p) {
     const script = [
       "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
       "Add-Type -AssemblyName System.Windows.Forms",
+      "$owner = New-Object System.Windows.Forms.Form",
+      "$owner.TopMost = $true",
+      "$owner.ShowInTaskbar = $false",
+      "$owner.WindowState = 'Minimized'",
+      "$owner.Show()",
       "$d = New-Object System.Windows.Forms.OpenFileDialog",
       "$d.Title = '选择程序或文件'",
       "$d.Filter = '程序 (*.exe)|*.exe|所有文件 (*.*)|*.*'",
-      "$r = $d.ShowDialog()",
+      "$r = $d.ShowDialog($owner)",
+      "$owner.Close()",
       "if ($r -eq [System.Windows.Forms.DialogResult]::OK) { $d.FileName }",
     ].join("; ");
     const path = await new Promise<string>((resolve) => {
